@@ -346,7 +346,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
                 '',
                 (gltf) => {
                   sendDebugMessage('GLTFモデルのロード成功、VRM変換開始');
-                  console.log('GLTFデータ:', gltf);
+                  sendDebugMessage('GLTFデータ:', gltf);
                   
                   THREE.VRM.from(gltf)
                     .then((vrm) => {
@@ -392,7 +392,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
                     })
                     .catch((error) => {
                       sendDebugMessage(\`VRM変換エラー: \${error.message}\`);
-                      console.error('VRM変換エラー:', error);
+                      sendDebugMessage('VRM変換エラー:', error);
                       
                       // エラー時に代替としてGLTFモデルをそのまま表示してみる
                       scene.add(gltf.scene);
@@ -410,7 +410,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
                 (error) => {
                   // エラーハンドリング
                   sendDebugMessage(\`VRMロードエラー: \${error.message}\`);
-                  console.error('VRMの読み込みエラー:', error);
+                  sendDebugMessage('VRMの読み込みエラー:', error);
                   loadingElement.style.display = 'none';
                   
                   // エラーメッセージを拡張機能に送信
@@ -422,7 +422,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
               );
             } catch (error) {
               sendDebugMessage(\`処理エラー: \${error.message}\`);
-              console.error('エラー:', error);
+              sendDebugMessage('エラー:', error);
               loadingElement.style.display = 'none';
               
               // エラーメッセージを拡張機能に送信
@@ -447,11 +447,20 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
               { key: 'reference', label: '参照' },
               { key: 'allowedUserName', label: '使用許可' },
               { key: 'violentUssageName', label: '暴力表現' },
+              { key: 'violentUsage', label: '暴力表現(v1.0)' },
               { key: 'sexualUssageName', label: '性的表現' },
+              { key: 'sexualUsage', label: '性的表現(v1.0)' },
               { key: 'commercialUssageName', label: '商用利用' },
+              { key: 'commercialUsage', label: '商用利用(v1.0)' },
               { key: 'otherPermissionUrl', label: '他の許可URL' },
               { key: 'licenseName', label: 'ライセンス名' },
-              { key: 'otherLicenseUrl', label: 'ライセンスURL' }
+              { key: 'otherLicenseUrl', label: 'ライセンスURL' },
+              { key: 'copyright', label: '著作権情報' },
+              { key: 'avatarPermission', label: 'アバター使用許可' },
+              { key: 'redistributionPermission', label: '再配布許可' },
+              { key: 'modification', label: '改変許可' },
+              { key: 'modelVersion', label: 'モデルバージョン' },
+              { key: 'description', label: '説明' }
             ];
 
             // メタデータを表示
@@ -463,6 +472,27 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
                 metadataElement.appendChild(div);
               }
             });
+
+            // サムネイル画像があれば表示
+            if (meta.thumbnailImage) {
+              try {
+                const div = document.createElement('div');
+                div.className = 'metadata-item';
+                div.innerHTML = '<span class="metadata-title">サムネイル:</span>';
+                
+                // 画像要素を作成
+                const img = document.createElement('img');
+                const blob = new Blob([meta.thumbnailImage], { type: 'image/png' });
+                img.src = URL.createObjectURL(blob);
+                img.style.maxWidth = '100%';
+                img.style.marginTop = '5px';
+                div.appendChild(img);
+                
+                metadataElement.appendChild(div);
+              } catch (error) {
+                sendDebugMessage('サムネイル表示エラー:', error);
+              }
+            }
 
             // メタデータが何も表示されない場合
             if (metadataElement.children.length <= 1) {
