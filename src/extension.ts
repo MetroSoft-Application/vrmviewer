@@ -154,6 +154,29 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
             font-size: 12px;
           }
           
+          #metadata {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+          }
+          
+          .metadata-item {
+            margin-bottom: 5px;
+          }
+          
+          .metadata-title {
+            font-weight: bold;
+            color: #88ccff;
+          }
+          
           #controls {
             position: absolute;
             bottom: 10px;
@@ -183,6 +206,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
         <div id="container">
           <div id="loading">VRMモデルを読み込み中...</div>
           <div id="info"></div>
+          <div id="metadata"></div>
           <div id="controls">
             <button id="reset-camera">カメラリセット</button>
           </div>
@@ -215,6 +239,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
           let currentVrm;
           let loadingElement;
           let infoElement;
+          let metadataElement;
           
           // 初期化
           init();
@@ -238,6 +263,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
             container = document.getElementById('container');
             loadingElement = document.getElementById('loading');
             infoElement = document.getElementById('info');
+            metadataElement = document.getElementById('metadata');
             
             // シーン作成
             scene = new THREE.Scene();
@@ -353,13 +379,14 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
                         }
                         infoElement.textContent = infoText;
                         sendDebugMessage(\`モデル情報: \${infoText}\`);
+                        displayVrmMetadata(meta);
                       }
                       
                       resetCamera();
                       
                       // 成功メッセージを拡張機能に送信
                       vscode.postMessage({
-                        type: 'info',
+                        type: 'debug',
                         message: 'VRMモデルを読み込みました。'
                       });
                     })
@@ -388,7 +415,7 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
                   
                   // エラーメッセージを拡張機能に送信
                   vscode.postMessage({
-                    type: 'error',
+                    type: 'debug',
                     message: \`VRMの読み込みに失敗しました: \${error.message}\`
                   });
                 }
@@ -400,12 +427,52 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
               
               // エラーメッセージを拡張機能に送信
               vscode.postMessage({
-                type: 'error',
+                type: 'debug',
                 message: \`処理エラー: \${error.message}\`
               });
             }
           }
           
+          // VRMメタデータを表示する関数
+          function displayVrmMetadata(meta) {
+            // メタデータ要素をクリア
+            metadataElement.innerHTML = '<div class="metadata-title">VRMメタデータ</div>';
+
+            // 使用可能なすべてのメタデータを表示
+            const metadataList = [
+              { key: 'title', label: 'タイトル' },
+              { key: 'version', label: 'バージョン' },
+              { key: 'author', label: '作者' },
+              { key: 'contactInformation', label: '連絡先' },
+              { key: 'reference', label: '参照' },
+              { key: 'allowedUserName', label: '使用許可' },
+              { key: 'violentUssageName', label: '暴力表現' },
+              { key: 'sexualUssageName', label: '性的表現' },
+              { key: 'commercialUssageName', label: '商用利用' },
+              { key: 'otherPermissionUrl', label: '他の許可URL' },
+              { key: 'licenseName', label: 'ライセンス名' },
+              { key: 'otherLicenseUrl', label: 'ライセンスURL' }
+            ];
+
+            // メタデータを表示
+            metadataList.forEach(item => {
+              if (meta[item.key]) {
+                const div = document.createElement('div');
+                div.className = 'metadata-item';
+                div.innerHTML = \`<span class="metadata-title">\${item.label}:</span> \${meta[item.key]}\`;
+                metadataElement.appendChild(div);
+              }
+            });
+
+            // メタデータが何も表示されない場合
+            if (metadataElement.children.length <= 1) {
+              const div = document.createElement('div');
+              div.className = 'metadata-item';
+              div.textContent = '詳細なメタデータはありません';
+              metadataElement.appendChild(div);
+            }
+          }
+
           // カメラをリセット
           function resetCamera() {
             if (currentVrm) {
@@ -419,33 +486,33 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
             controls.update();
             sendDebugMessage('カメラをリセットしました');
           }
-          
+
           // ウィンドウリサイズ時の処理
           function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
           }
-          
+
           // アニメーションループ
           function animate() {
             requestAnimationFrame(animate);
-            
+
             // コントロールの更新
             controls.update();
-            
+
             // VRMの更新処理（必要に応じて）
             if (currentVrm) {
               // currentVrm.update(clock.getDelta());
             }
-            
+
             // レンダリング
             renderer.render(scene, camera);
           }
-          
+
           // 時間管理用のクロック
           const clock = new THREE.Clock();
-          
+
           // 初期化完了メッセージ
           sendDebugMessage('WebView初期化完了');
         </script>
@@ -465,4 +532,4 @@ class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
     }
     return text;
   }
-}
+};
