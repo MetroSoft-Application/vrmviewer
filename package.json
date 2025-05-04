@@ -1,7 +1,7 @@
 {
   "name": "vrm-viewer",
   "displayName": "VRM Viewer",
-  "description": "VSCode内でVRMファイルを表示するエディタ",
+  "description": "Preview VRM files directly within the editor.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.60.0"
