@@ -1,12 +1,26 @@
 {
   "name": "vrm-viewer",
   "displayName": "VRM Viewer",
-  "description": "Preview VRM files directly within the editor.",
-  "version": "0.0.1",
+  "description": "Preview and inspect VRM 3D avatar models directly within Visual Studio Code editor.",
+  "version": "1.0.0",
+  "publisher": "MetroSoft-Application",
+  "icon": "resources/img/vrm-viewer.png",
+  "repository": {
+    "url": "https://github.com/MetroSoft-Application/vrmviewer"
+  },
+  "keywords": [
+    "vrm",
+    "3d",
+    "model",
+    "viewer",
+    "preview",
+    "avatar"
+  ],
   "engines": {
     "vscode": "^1.60.0"
   },
   "categories": [
+    "Visualization",
     "Other"
   ],
   "activationEvents": [

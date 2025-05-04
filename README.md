@@ -1,6 +1,6 @@
 # VRM Viewer
 
-A Visual Studio Code extension that allows you to preview VRM files directly within the editor.
+Preview VRM files directly within the editor.
 
 ## Features
 
@@ -11,10 +11,10 @@ A Visual Studio Code extension that allows you to preview VRM files directly wit
 
 ## Usage
 
-1. Open a `.vrm` file in VS Code
+1. Open a `.vrm` file
 2. The VRM model will automatically be displayed in the VRM Viewer
 
-![VRM Viewer Preview](./resources/img/vrm-preview-sample.png)
+![VRM Viewer Preview](./resources/img/vrm-preview-sample.gif)
 
 ## Controls
 
@@ -30,14 +30,14 @@ Currently no additional configuration is required. The viewer uses default setti
 
 - Visual Studio Code 1.60.0 or newer
 
-## Technical Details
+## Libraries Used
 
-This extension:
+This extension uses the following libraries:
 
-- Registers a custom editor for `.vrm` files
-- Uses Three.js for 3D rendering
-- Implements @pixiv/three-vrm for VRM file format support
-- Renders the model in a VS Code WebView panel
+- [Three.js](https://threejs.org/) - JavaScript 3D library (v0.137.5)
+- [@pixiv/three-vrm](https://github.com/pixiv/three-vrm) - VRM loader for Three.js (v3.4.0)
+- [GLTFLoader.js](https://threejs.org/docs/#examples/en/loaders/GLTFLoader) - GLTF loader for Three.js
+- [OrbitControls.js](https://threejs.org/docs/#examples/en/controls/OrbitControls) - Camera controls for Three.js
 
 ## License
 

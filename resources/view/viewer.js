@@ -12,6 +12,19 @@ function sendDebugMessage(message) {
 // Three.js関連の変数
 let container, camera, scene, renderer, controls, currentVrm;
 let loadingElement, metadataElement;
+// ライト関連の変数
+let ambientLight, directionalLight;
+// デフォルト設定
+const DEFAULT_SETTINGS = {
+    ambientIntensity: 0.4,
+    directionalIntensity: 0.75,
+    backgroundColor: 0x303030,
+    cameraPosition: {
+        x: 0,
+        y: 1.5,
+        z: 1.8
+    }
+};
 
 // 初期化
 init();
@@ -22,14 +35,20 @@ window.addEventListener('message', event => {
     if (message.type === 'loadVrm') loadVrmFromBase64(message.data, message.fileName);
 });
 
-// リセットボタンのイベントリスナー
+// リセットボタンなどのイベントリスナー
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reset-camera').addEventListener('click', resetCamera);
+    document.getElementById('reset-lights').addEventListener('click', resetLights);
+
+    // ライト調整スライダーのイベントリスナーを設定
+    document.getElementById('ambient-light').addEventListener('input', updateAmbientLight);
+    document.getElementById('directional-light').addEventListener('input', updateDirectionalLight);
+    document.getElementById('background-color').addEventListener('input', updateBackgroundColor);
 });
 
 // Three.jsの初期化
 function init() {
-    sendDebugMessage('Three.js 初期化開始');
+    sendDebugMessage('Initializing Three.js');
 
     // DOM要素の取得
     container = document.getElementById('container');
@@ -38,15 +57,21 @@ function init() {
 
     // シーン作成
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x303030);
+    scene.background = new THREE.Color(DEFAULT_SETTINGS.backgroundColor);
 
     // カメラの設定
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.5, 3);
+    camera.position.set(
+        DEFAULT_SETTINGS.cameraPosition.x,
+        DEFAULT_SETTINGS.cameraPosition.y,
+        DEFAULT_SETTINGS.cameraPosition.z
+    );
 
     // ライトの設定
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    ambientLight = new THREE.AmbientLight(0xffffff, DEFAULT_SETTINGS.ambientIntensity);
+    scene.add(ambientLight);
+
+    directionalLight = new THREE.DirectionalLight(0xffffff, DEFAULT_SETTINGS.directionalIntensity);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
@@ -72,12 +97,54 @@ function init() {
     // アニメーションループ開始
     animate();
 
-    sendDebugMessage('Three.js 初期化完了');
+    sendDebugMessage('Three.js initialization completed');
+
+    // UIの初期値を設定
+    updateLightControlsUI();
+}
+
+// ライト操作関数
+function updateAmbientLight(event) {
+    const intensity = parseFloat(event.target.value);
+    ambientLight.intensity = intensity;
+    sendDebugMessage(`Ambient light intensity set to ${intensity}`);
+}
+
+function updateDirectionalLight(event) {
+    const intensity = parseFloat(event.target.value);
+    directionalLight.intensity = intensity;
+    sendDebugMessage(`Directional light intensity set to ${intensity}`);
+}
+
+function updateBackgroundColor(event) {
+    const color = event.target.value;
+    scene.background = new THREE.Color(color);
+    sendDebugMessage(`Background color set to ${color}`);
+}
+
+// ライトをデフォルト設定にリセット
+function resetLights() {
+    ambientLight.intensity = DEFAULT_SETTINGS.ambientIntensity;
+    directionalLight.intensity = DEFAULT_SETTINGS.directionalIntensity;
+    scene.background = new THREE.Color(DEFAULT_SETTINGS.backgroundColor);
+
+    // UIスライダーも更新
+    updateLightControlsUI();
+
+    sendDebugMessage('Light settings reset to default');
+}
+
+// UIコントロールを現在の設定に合わせて更新
+function updateLightControlsUI() {
+    document.getElementById('ambient-light').value = ambientLight.intensity;
+    document.getElementById('directional-light').value = directionalLight.intensity;
+    document.getElementById('background-color').value = '#' +
+        new THREE.Color(scene.background).getHexString();
 }
 
 // Base64データからVRMを読み込む
 function loadVrmFromBase64(base64String, fileName) {
-    sendDebugMessage(`VRMロード開始: ${fileName}`);
+    sendDebugMessage(`Loading VRM: ${fileName}`);
     loadingElement.style.display = 'block';
 
     try {
@@ -92,14 +159,14 @@ function loadVrmFromBase64(base64String, fileName) {
             currentVrm = null;
         }
 
-        sendDebugMessage('GLTFLoaderを作成');
+        sendDebugMessage('Creating GLTFLoader');
         // GLTFLoaderの設定
         const loader = new THREE.GLTFLoader();
 
         // VRM 1.0対応のプラグインを登録
         loader.register((parser) => new THREE.VRMLoaderPlugin(parser));
 
-        sendDebugMessage('VRMファイルのロード開始');
+        sendDebugMessage('Starting VRM file loading');
 
         // parseメソッドを使ってArrayBufferを直接ロード
         loader.parse(
@@ -109,13 +176,13 @@ function loadVrmFromBase64(base64String, fileName) {
             handleLoadError
         );
     } catch (error) {
-        handleLoadError(error, '処理エラー');
+        handleLoadError(error, 'Processing Error');
     }
 }
 
 // GLTFロード成功ハンドラ
 function handleGltfLoad(gltf) {
-    sendDebugMessage('GLTFモデルのロード成功、VRM取得開始');
+    sendDebugMessage('GLTF model loaded successfully, getting VRM');
 
     // まずVRM 1.0形式を確認
     const vrm = gltf.userData.vrm;
@@ -129,7 +196,7 @@ function handleGltfLoad(gltf) {
                 vrm.vrmVersion = "1.0";
             }
         }
-        sendDebugMessage(`VRMバージョン: ${vrm.vrmVersion} のモデルを検出`);
+        sendDebugMessage(`Detected VRM version: ${vrm.vrmVersion}`);
         handleVrm10Model(vrm);
     } else {
         // VRM 0.x形式として処理
@@ -139,7 +206,7 @@ function handleGltfLoad(gltf) {
 
 // VRM 1.0モデル処理
 function handleVrm10Model(vrm) {
-    sendDebugMessage(`VRM ${vrm.vrmVersion || '1.0'} 形式のモデルを処理中`);
+    sendDebugMessage(`Processing VRM ${vrm.vrmVersion || '1.0'} model`);
     currentVrm = vrm;
 
     // モデルの向きを自動判定
@@ -147,7 +214,7 @@ function handleVrm10Model(vrm) {
 
     // シーンにVRMモデルを追加
     scene.add(vrm.scene);
-    sendDebugMessage('VRMモデルをシーンに追加');
+    sendDebugMessage('VRM model added to scene');
 
     // モデルが読み込まれたらローディング表示を隠す
     loadingElement.style.display = 'none';
@@ -160,18 +227,18 @@ function handleVrm10Model(vrm) {
     // 成功メッセージを拡張機能に送信
     vscode.postMessage({
         type: 'debug',
-        message: `VRM ${vrm.vrmVersion || '1.0'} モデルを読み込みました。`
+        message: `Loaded VRM ${vrm.vrmVersion || '1.0'} model.`
     });
 }
 
 // VRM 0.x形式モデル処理
 function handleVrm0xModel(gltf) {
     // VRM 1.0形式でない場合、従来のVRM 0.x形式として読み込みを試みる
-    sendDebugMessage('VRM 1.0形式ではありません。VRM 0.x形式として読み込みを試みます。');
+    sendDebugMessage('Not a VRM 1.0 model. Attempting to load as VRM 0.x format.');
 
     THREE.VRM.from(gltf)
         .then((vrm) => {
-            sendDebugMessage('VRM 0.x変換成功');
+            sendDebugMessage('VRM 0.x conversion successful');
             // VRMモデルが読み込まれた
             currentVrm = vrm;
 
@@ -185,7 +252,7 @@ function handleVrm0xModel(gltf) {
 
             // シーンにVRMモデルを追加
             scene.add(vrm.scene);
-            sendDebugMessage('VRM 0.xモデルをシーンに追加');
+            sendDebugMessage('VRM 0.x model added to scene');
 
             // モデルが読み込まれたらローディング表示を隠す
             loadingElement.style.display = 'none';
@@ -198,22 +265,22 @@ function handleVrm0xModel(gltf) {
             // 成功メッセージを拡張機能に送信
             vscode.postMessage({
                 type: 'debug',
-                message: 'VRM 0.xモデルを読み込みました。'
+                message: 'Loaded VRM 0.x model.'
             });
         })
         .catch((error) => {
-            sendDebugMessage(`VRM変換エラー: ${error.message}`);
+            sendDebugMessage(`VRM conversion error: ${error.message}`);
 
             // エラー時に代替としてGLTFモデルをそのまま表示
             scene.add(gltf.scene);
-            sendDebugMessage('GLTFモデルをシーンに直接追加（VRM変換失敗のため）');
+            sendDebugMessage('Added GLTF model directly to scene (due to VRM conversion failure)');
 
             loadingElement.style.display = 'none';
 
             // エラーメッセージを拡張機能に送信
             vscode.postMessage({
                 type: 'error',
-                message: `VRMの変換に失敗しました: ${error.message}`
+                message: `VRM conversion failed: ${error.message}`
             });
         });
 }
@@ -253,7 +320,7 @@ function displayVrmMetadata(vrm) {
     const meta = vrm.meta;
 
     // モデルから直接VRMバージョンを取得
-    let vrmVersion = "不明";
+    let vrmVersion = "Unknown";
 
     // VRM 1.0以降ではversionInfoプロパティがある場合がある
     if (vrm.vrmVersion) {
@@ -270,10 +337,10 @@ function displayVrmMetadata(vrm) {
         // バージョンが判断できない場合、構造から推測
         const isVrm1Structure = meta.name !== undefined
             && (meta.authors !== undefined || Array.isArray(meta.authors));
-        vrmVersion = isVrm1Structure ? "1.0 (推定)" : "0.x (推定)";
+        vrmVersion = isVrm1Structure ? "1.0 (Estimated)" : "0.x (Estimated)";
     }
 
-    sendDebugMessage(`VRMメタデータバージョン: ${vrmVersion}`);
+    sendDebugMessage(`VRM metadata version: ${vrmVersion}`);
 
     // モデルのバージョンに応じた情報表示
     const isVrm1 = vrmVersion.startsWith('1.') || vrmVersion.includes('1.0');
@@ -359,8 +426,8 @@ function appendMetadataItem(itemOrText, meta) {
                 img.style.marginTop = '5px';
                 div.appendChild(img);
             } catch (error) {
-                div.innerHTML += ' [サムネイル表示エラー]';
-                sendDebugMessage(`サムネイル表示エラー: ${error.message}`);
+                div.innerHTML += ' [Thumbnail display error]';
+                sendDebugMessage(`Thumbnail display error: ${error.message}`);
             }
         } else if (item.isArray && Array.isArray(meta[item.key])) {
             div.innerHTML = `<span class="metadata-title">${item.label}:</span> ${meta[item.key].join(', ')}`;
@@ -376,7 +443,7 @@ function appendMetadataItem(itemOrText, meta) {
 function determineModelOrientation(vrm) {
     // メタデータが存在しない場合はデフォルト値（前向き）を返す
     if (!vrm || !vrm.meta) {
-        sendDebugMessage('メタデータがないため、デフォルトの向きを使用します');
+        sendDebugMessage('No metadata found, using default orientation');
         return 0;
     }
 
@@ -392,10 +459,14 @@ function determineModelOrientation(vrm) {
 // カメラをリセット
 function resetCamera() {
     // モデルの有無に関わらず同じ位置・向きにリセットする
-    camera.position.set(0, 1.5, 3);
+    camera.position.set(
+        DEFAULT_SETTINGS.cameraPosition.x,
+        DEFAULT_SETTINGS.cameraPosition.y,
+        DEFAULT_SETTINGS.cameraPosition.z
+    );
     controls.target.set(0, 1, 0);
     controls.update();
-    sendDebugMessage('カメラをリセットしました');
+    sendDebugMessage('Camera reset to default position');
 }
 
 // ウィンドウリサイズ時の処理
@@ -422,4 +493,4 @@ function animate() {
 }
 
 // 初期化完了メッセージ
-sendDebugMessage('WebView初期化完了');
+sendDebugMessage('WebView initialization completed');
