@@ -5,13 +5,13 @@ const clock = new THREE.Clock();
 
 // デバッグのためのログ送信関数
 function sendDebugMessage(message) {
-    console.log(message); // Devツールのコンソールに出力
+    console.log(message);
     vscode.postMessage({ type: 'debug', message: message });
 }
 
 // Three.js関連の変数
 let container, camera, scene, renderer, controls, currentVrm;
-let loadingElement, infoElement, metadataElement;
+let loadingElement, metadataElement;
 
 // 初期化
 init();
@@ -30,11 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Three.jsの初期化
 function init() {
     sendDebugMessage('Three.js 初期化開始');
-    
+
     // DOM要素の取得
     container = document.getElementById('container');
     loadingElement = document.getElementById('loading');
-    infoElement = document.getElementById('info');
     metadataElement = document.getElementById('metadata');
 
     // シーン作成
@@ -80,7 +79,6 @@ function init() {
 function loadVrmFromBase64(base64String, fileName) {
     sendDebugMessage(`VRMロード開始: ${fileName}`);
     loadingElement.style.display = 'block';
-    infoElement.textContent = `ファイル: ${fileName}`;
 
     try {
         // base64をバイナリデータに変換
@@ -119,23 +117,33 @@ function loadVrmFromBase64(base64String, fileName) {
 function handleGltfLoad(gltf) {
     sendDebugMessage('GLTFモデルのロード成功、VRM取得開始');
 
-    // VRM 1.0形式ではgltf.userData.vrmからVRMを取得
+    // まずVRM 1.0形式を確認
     const vrm = gltf.userData.vrm;
 
     if (vrm) {
+        // VRMバージョン情報を取得して保存（後で表示に使用）
+        if (!vrm.vrmVersion) {
+            if (vrm.meta && vrm.meta.metaVersion) {
+                vrm.vrmVersion = vrm.meta.metaVersion;
+            } else {
+                vrm.vrmVersion = "1.0";
+            }
+        }
+        sendDebugMessage(`VRMバージョン: ${vrm.vrmVersion} のモデルを検出`);
         handleVrm10Model(vrm);
     } else {
+        // VRM 0.x形式として処理
         handleVrm0xModel(gltf);
     }
 }
 
 // VRM 1.0モデル処理
 function handleVrm10Model(vrm) {
-    sendDebugMessage('VRM 1.0形式のモデルを検出');
+    sendDebugMessage(`VRM ${vrm.vrmVersion || '1.0'} 形式のモデルを処理中`);
     currentVrm = vrm;
 
-    // モデルの初期設定
-    vrm.scene.rotation.y = Math.PI;
+    // モデルの向きを自動判定
+    vrm.scene.rotation.y = determineModelOrientation(vrm);
 
     // シーンにVRMモデルを追加
     scene.add(vrm.scene);
@@ -152,7 +160,7 @@ function handleVrm10Model(vrm) {
     // 成功メッセージを拡張機能に送信
     vscode.postMessage({
         type: 'debug',
-        message: 'VRM 1.0モデルを読み込みました。'
+        message: `VRM ${vrm.vrmVersion || '1.0'} モデルを読み込みました。`
     });
 }
 
@@ -167,8 +175,13 @@ function handleVrm0xModel(gltf) {
             // VRMモデルが読み込まれた
             currentVrm = vrm;
 
-            // モデルの初期設定
-            vrm.scene.rotation.y = Math.PI;
+            // バージョン情報を設定
+            if (!vrm.vrmVersion) {
+                vrm.vrmVersion = "0.x";
+            }
+
+            // モデルの向きを自動判定して設定
+            vrm.scene.rotation.y = determineModelOrientation(vrm);
 
             // シーンにVRMモデルを追加
             scene.add(vrm.scene);
@@ -229,8 +242,32 @@ function displayVrmMetadata(vrm) {
     }
 
     const meta = vrm.meta;
-    const isVrm1 = meta.metaVersion && meta.metaVersion.startsWith('1.');
-    sendDebugMessage(`VRMメタデータバージョン: ${isVrm1 ? '1.0' : '0.x'}`);
+
+    // モデルから直接VRMバージョンを取得
+    let vrmVersion = "不明";
+
+    // VRM 1.0以降ではversionInfoプロパティがある場合がある
+    if (vrm.vrmVersion) {
+        vrmVersion = vrm.vrmVersion;
+    }
+    // メタデータのバージョン情報を確認
+    else if (meta.metaVersion) {
+        vrmVersion = meta.metaVersion;
+    }
+    // 0.xバージョンの場合は特定の構造を持っているかどうかで判断
+    else if (meta.title && !meta.name) {
+        vrmVersion = "0.x";
+    } else {
+        // バージョンが判断できない場合、構造から推測
+        const isVrm1Structure = meta.name !== undefined
+            && (meta.authors !== undefined || Array.isArray(meta.authors));
+        vrmVersion = isVrm1Structure ? "1.0 (推定)" : "0.x (推定)";
+    }
+
+    sendDebugMessage(`VRMメタデータバージョン: ${vrmVersion}`);
+
+    // モデルのバージョンに応じた情報表示
+    const isVrm1 = vrmVersion.startsWith('1.') || vrmVersion.includes('1.0');
 
     // モデル情報の基本情報を表示
     const modelName = isVrm1 ? (meta.name || 'Unknown') : (meta.title || 'Unknown');
@@ -238,28 +275,27 @@ function displayVrmMetadata(vrm) {
         ? (Array.isArray(meta.authors) && meta.authors.length > 0 ? meta.authors.join(', ') : (meta.authors || ''))
         : (meta.author || '');
 
-    let infoText = `VRM ${isVrm1 ? '1.0' : '0.x'}: ${modelName}`;
-    if (authorName) infoText += ` | 作者: ${authorName}`;
-    infoElement.textContent = infoText;
+    // VRMバージョン情報を最初の項目として表示
+    appendMetadataItem({ label: 'VRMバージョン', key: '_version' }, { _version: vrmVersion });
 
     // VRM 1.0と0.xの両方のメタデータキーを網羅したリスト
     const metadataList = [
         // VRM 1.0のキー
-        { key: 'name', label: 'モデル名(v1.0)' },
+        { key: 'name', label: 'モデル名(v1.x)' },
         { key: 'version', label: 'バージョン' },
-        { key: 'authors', label: '作者(v1.0)', isArray: true },
-        { key: 'copyrightInformation', label: '著作権情報(v1.0)' },
+        { key: 'authors', label: '作者(v1.x)', isArray: true },
+        { key: 'copyrightInformation', label: '著作権情報(v1.x)' },
         { key: 'contactInformation', label: '連絡先' },
-        { key: 'references', label: '参照(v1.0)', isArray: true },
+        { key: 'references', label: '参照(v1.x)', isArray: true },
         { key: 'thirdPartyLicenses', label: 'サードパーティライセンス' },
         { key: 'thumbnailImage', label: 'サムネイル', isImage: true },
-        { key: 'licenseUrl', label: 'ライセンスURL(v1.0)' },
+        { key: 'licenseUrl', label: 'ライセンスURL(v1.x)' },
         { key: 'avatarPermission', label: 'アバター使用許可' },
-        { key: 'allowExcessivelyViolentUsage', label: '暴力表現(v1.0)' },
-        { key: 'allowExcessivelySexualUsage', label: '性的表現(v1.0)' },
-        { key: 'commercialUsage', label: '商用利用(v1.0)' },
-        { key: 'allowRedistribution', label: '再配布許可(v1.0)' },
-        { key: 'allowModification', label: '改変許可(v1.0)' },
+        { key: 'allowExcessivelyViolentUsage', label: '暴力表現(v1.x)' },
+        { key: 'allowExcessivelySexualUsage', label: '性的表現(v1.x)' },
+        { key: 'commercialUsage', label: '商用利用(v1.x)' },
+        { key: 'allowRedistribution', label: '再配布許可(v1.x)' },
+        { key: 'allowModification', label: '改変許可(v1.x)' },
 
         // VRM 0.xのキー
         { key: 'title', label: 'タイトル(v0.x)' },
@@ -327,11 +363,28 @@ function appendMetadataItem(itemOrText, meta) {
     metadataElement.appendChild(div);
 }
 
+// モデルの向きを自動判定する関数
+function determineModelOrientation(vrm) {
+    // メタデータが存在しない場合はデフォルト値（前向き）を返す
+    if (!vrm || !vrm.meta) {
+        sendDebugMessage('メタデータがないため、デフォルトの向きを使用します');
+        return 0;
+    }
+
+    // VRMバージョンに応じて向きを設定
+    // VRM 1.0は前向き（0度）、VRM 0.xは後ろ向き（180度）をデフォルトとする
+    if (vrm.vrmVersion && vrm.vrmVersion.startsWith('1')) {
+        return 0;
+    } else {
+        return Math.PI;
+    }
+}
+
 // カメラをリセット
 function resetCamera() {
     // モデルの有無に関わらず同じ位置・向きにリセットする
     camera.position.set(0, 1.5, 3);
-    controls.target.set(0, 1, 0); 
+    controls.target.set(0, 1, 0);
     controls.update();
     sendDebugMessage('カメラをリセットしました');
 }
