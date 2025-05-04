@@ -6,22 +6,22 @@ import { VrmEditorProvider } from './VrmEditorProvider';
  * @param context - 拡張機能のコンテキスト。拡張機能のリソースやサブスクリプションを管理する
  */
 export function activate(context: vscode.ExtensionContext) {
-  // VRMエディタプロバイダの登録
-  const vrmEditorProvider = new VrmEditorProvider(context);
-  context.subscriptions.push(
-    vscode.window.registerCustomEditorProvider(
-      'vrmViewer.vrmPreview',
-      vrmEditorProvider,
-      {
-        webviewOptions: {
-          retainContextWhenHidden: true,
-        },
-        supportsMultipleEditorsPerDocument: false,
-      }
-    )
-  );
+    // VRMエディタプロバイダの登録
+    const vrmEditorProvider = new VrmEditorProvider(context);
+    context.subscriptions.push(
+        vscode.window.registerCustomEditorProvider(
+            'vrmViewer.vrmPreview',
+            vrmEditorProvider,
+            {
+                webviewOptions: {
+                    retainContextWhenHidden: true,
+                },
+                supportsMultipleEditorsPerDocument: false,
+            }
+        )
+    );
 
-  console.log('VRM Viewer 拡張機能がアクティブになりました');
+    console.log('VRM Viewer 拡張機能がアクティブになりました');
 }
 
 /**

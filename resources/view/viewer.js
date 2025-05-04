@@ -219,25 +219,34 @@ function handleVrm0xModel(gltf) {
 }
 
 // エラーハンドリング関数
-function handleLoadError(error, prefix = 'VRMロードエラー') {
-    sendDebugMessage(`${prefix}: ${error.message}`);
-    loadingElement.style.display = 'none';
+function handleLoadError(error, prefix = 'VRM Loading Error') {
+    sendDebugMessage(`${prefix}: ${error.message || error}`);
 
-    // エラーメッセージを拡張機能に送信
-    vscode.postMessage({
-        type: 'error',
-        message: `${prefix === 'VRMロードエラー' ? 'VRMの読み込みに失敗しました' : prefix}: ${error.message}`
-    });
+    const loadingElement = document.getElementById('loading');
+    if (loadingElement) {
+        loadingElement.textContent = `Error: ${error.message || 'Failed to load VRM model'}`;
+        loadingElement.style.backgroundColor = 'rgba(220, 53, 69, 0.8)'; // エラー表示を赤色に
+    }
+
+    console.error(error);
+}
+
+// ローディングメッセージ更新
+function updateLoadingMessage(message) {
+    const loadingElement = document.getElementById('loading');
+    if (loadingElement) {
+        loadingElement.textContent = message;
+    }
 }
 
 // VRMメタデータを表示する関数
 function displayVrmMetadata(vrm) {
     // メタデータ要素をクリア
-    metadataElement.innerHTML = '<div class="metadata-title">VRMメタデータ</div>';
+    metadataElement.innerHTML = '<div class="metadata-title">VRM Metadata</div>';
 
     // VRMバージョンの判定とメタデータの取得
     if (!vrm.meta) {
-        appendMetadataItem('メタデータはありません');
+        appendMetadataItem('No metadata available');
         return;
     }
 
@@ -276,43 +285,43 @@ function displayVrmMetadata(vrm) {
         : (meta.author || '');
 
     // VRMバージョン情報を最初の項目として表示
-    appendMetadataItem({ label: 'VRMバージョン', key: '_version' }, { _version: vrmVersion });
+    appendMetadataItem({ label: 'VRM Version', key: '_version' }, { _version: vrmVersion });
 
     // VRM 1.0と0.xの両方のメタデータキーを網羅したリスト
     const metadataList = [
         // VRM 1.0のキー
-        { key: 'name', label: 'モデル名(v1.x)' },
-        { key: 'version', label: 'バージョン' },
-        { key: 'authors', label: '作者(v1.x)', isArray: true },
-        { key: 'copyrightInformation', label: '著作権情報(v1.x)' },
-        { key: 'contactInformation', label: '連絡先' },
-        { key: 'references', label: '参照(v1.x)', isArray: true },
-        { key: 'thirdPartyLicenses', label: 'サードパーティライセンス' },
-        { key: 'thumbnailImage', label: 'サムネイル', isImage: true },
-        { key: 'licenseUrl', label: 'ライセンスURL(v1.x)' },
-        { key: 'avatarPermission', label: 'アバター使用許可' },
-        { key: 'allowExcessivelyViolentUsage', label: '暴力表現(v1.x)' },
-        { key: 'allowExcessivelySexualUsage', label: '性的表現(v1.x)' },
-        { key: 'commercialUsage', label: '商用利用(v1.x)' },
-        { key: 'allowRedistribution', label: '再配布許可(v1.x)' },
-        { key: 'allowModification', label: '改変許可(v1.x)' },
+        { key: 'name', label: 'Model Name (v1.x)' },
+        { key: 'version', label: 'Version' },
+        { key: 'authors', label: 'Authors (v1.x)', isArray: true },
+        { key: 'copyrightInformation', label: 'Copyright Information (v1.x)' },
+        { key: 'contactInformation', label: 'Contact Information' },
+        { key: 'references', label: 'References (v1.x)', isArray: true },
+        { key: 'thirdPartyLicenses', label: 'Third Party Licenses' },
+        { key: 'thumbnailImage', label: 'Thumbnail', isImage: true },
+        { key: 'licenseUrl', label: 'License URL (v1.x)' },
+        { key: 'avatarPermission', label: 'Avatar Permission' },
+        { key: 'allowExcessivelyViolentUsage', label: 'Violent Expression (v1.x)' },
+        { key: 'allowExcessivelySexualUsage', label: 'Sexual Expression (v1.x)' },
+        { key: 'commercialUsage', label: 'Commercial Usage (v1.x)' },
+        { key: 'allowRedistribution', label: 'Redistribution Permission (v1.x)' },
+        { key: 'allowModification', label: 'Modification Permission (v1.x)' },
 
         // VRM 0.xのキー
-        { key: 'title', label: 'タイトル(v0.x)' },
-        { key: 'author', label: '作者(v0.x)' },
-        { key: 'copyright', label: '著作権情報(v0.x)' },
-        { key: 'reference', label: '参照(v0.x)' },
-        { key: 'violentUssageName', label: '暴力表現(v0.x)' },
-        { key: 'sexualUssageName', label: '性的表現(v0.x)' },
-        { key: 'commercialUssageName', label: '商用利用(v0.x)' },
-        { key: 'otherPermissionUrl', label: '他の許可URL' },
-        { key: 'licenseName', label: 'ライセンス名' },
-        { key: 'otherLicenseUrl', label: 'ライセンスURL(v0.x)' },
-        { key: 'redistributionPermission', label: '再配布許可(v0.x)' },
-        { key: 'modification', label: '改変許可(v0.x)' },
-        { key: 'modelVersion', label: 'モデルバージョン' },
-        { key: 'description', label: '説明' },
-        { key: 'allowedUserName', label: '使用許可(v0.x)' }
+        { key: 'title', label: 'Title (v0.x)' },
+        { key: 'author', label: 'Author (v0.x)' },
+        { key: 'copyright', label: 'Copyright (v0.x)' },
+        { key: 'reference', label: 'Reference (v0.x)' },
+        { key: 'violentUssageName', label: 'Violent Expression (v0.x)' },
+        { key: 'sexualUssageName', label: 'Sexual Expression (v0.x)' },
+        { key: 'commercialUssageName', label: 'Commercial Usage (v0.x)' },
+        { key: 'otherPermissionUrl', label: 'Other Permission URL' },
+        { key: 'licenseName', label: 'License Name' },
+        { key: 'otherLicenseUrl', label: 'License URL (v0.x)' },
+        { key: 'redistributionPermission', label: 'Redistribution Permission (v0.x)' },
+        { key: 'modification', label: 'Modification Permission (v0.x)' },
+        { key: 'modelVersion', label: 'Model Version' },
+        { key: 'description', label: 'Description' },
+        { key: 'allowedUserName', label: 'Usage Permission (v0.x)' }
     ];
 
     // メタデータを表示
@@ -326,7 +335,7 @@ function displayVrmMetadata(vrm) {
 
     // メタデータが何も表示されない場合
     if (metadataCount === 0) {
-        appendMetadataItem('詳細なメタデータはありません');
+        appendMetadataItem('No detailed metadata available');
     }
 }
 
