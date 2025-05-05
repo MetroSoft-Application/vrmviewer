@@ -342,53 +342,44 @@ function displayVrmMetadata(vrm) {
 
     sendDebugMessage(`VRM metadata version: ${vrmVersion}`);
 
-    // モデルのバージョンに応じた情報表示
-    const isVrm1 = vrmVersion.startsWith('1.') || vrmVersion.includes('1.0');
-
-    // モデル情報の基本情報を表示
-    const modelName = isVrm1 ? (meta.name || 'Unknown') : (meta.title || 'Unknown');
-    const authorName = isVrm1
-        ? (Array.isArray(meta.authors) && meta.authors.length > 0 ? meta.authors.join(', ') : (meta.authors || ''))
-        : (meta.author || '');
-
     // VRMバージョン情報を最初の項目として表示
     appendMetadataItem({ label: 'VRM Version', key: '_version' }, { _version: vrmVersion });
 
     // VRM 1.0と0.xの両方のメタデータキーを網羅したリスト
     const metadataList = [
         // VRM 1.0のキー
-        { key: 'name', label: 'Model Name (v1.x)' },
+        { key: 'name', label: 'Model Name' },
         { key: 'version', label: 'Version' },
-        { key: 'authors', label: 'Authors (v1.x)', isArray: true },
-        { key: 'copyrightInformation', label: 'Copyright Information (v1.x)' },
+        { key: 'authors', label: 'Authors', isArray: true },
+        { key: 'copyrightInformation', label: 'Copyright Information' },
         { key: 'contactInformation', label: 'Contact Information' },
-        { key: 'references', label: 'References (v1.x)', isArray: true },
+        { key: 'references', label: 'References', isArray: true },
         { key: 'thirdPartyLicenses', label: 'Third Party Licenses' },
         { key: 'thumbnailImage', label: 'Thumbnail', isImage: true },
-        { key: 'licenseUrl', label: 'License URL (v1.x)' },
+        { key: 'licenseUrl', label: 'License URL' },
         { key: 'avatarPermission', label: 'Avatar Permission' },
-        { key: 'allowExcessivelyViolentUsage', label: 'Violent Expression (v1.x)' },
-        { key: 'allowExcessivelySexualUsage', label: 'Sexual Expression (v1.x)' },
-        { key: 'commercialUsage', label: 'Commercial Usage (v1.x)' },
-        { key: 'allowRedistribution', label: 'Redistribution Permission (v1.x)' },
-        { key: 'allowModification', label: 'Modification Permission (v1.x)' },
+        { key: 'allowExcessivelyViolentUsage', label: 'Violent Expression' },
+        { key: 'allowExcessivelySexualUsage', label: 'Sexual Expression' },
+        { key: 'commercialUsage', label: 'Commercial Usage' },
+        { key: 'allowRedistribution', label: 'Redistribution Permission' },
+        { key: 'allowModification', label: 'Modification Permission' },
 
         // VRM 0.xのキー
-        { key: 'title', label: 'Title (v0.x)' },
-        { key: 'author', label: 'Author (v0.x)' },
-        { key: 'copyright', label: 'Copyright (v0.x)' },
-        { key: 'reference', label: 'Reference (v0.x)' },
-        { key: 'violentUssageName', label: 'Violent Expression (v0.x)' },
-        { key: 'sexualUssageName', label: 'Sexual Expression (v0.x)' },
-        { key: 'commercialUssageName', label: 'Commercial Usage (v0.x)' },
+        { key: 'title', label: 'Title' },
+        { key: 'author', label: 'Author' },
+        { key: 'copyright', label: 'Copyright' },
+        { key: 'reference', label: 'Reference' },
+        { key: 'violentUssageName', label: 'Violent Expression' },
+        { key: 'sexualUssageName', label: 'Sexual Expression' },
+        { key: 'commercialUssageName', label: 'Commercial Usage' },
         { key: 'otherPermissionUrl', label: 'Other Permission URL' },
         { key: 'licenseName', label: 'License Name' },
-        { key: 'otherLicenseUrl', label: 'License URL (v0.x)' },
-        { key: 'redistributionPermission', label: 'Redistribution Permission (v0.x)' },
-        { key: 'modification', label: 'Modification Permission (v0.x)' },
+        { key: 'otherLicenseUrl', label: 'License URL' },
+        { key: 'redistributionPermission', label: 'Redistribution Permission' },
+        { key: 'modification', label: 'Modification Permission' },
         { key: 'modelVersion', label: 'Model Version' },
         { key: 'description', label: 'Description' },
-        { key: 'allowedUserName', label: 'Usage Permission (v0.x)' }
+        { key: 'allowedUserName', label: 'Usage Permission' }
     ];
 
     // メタデータを表示
