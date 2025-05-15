@@ -93,6 +93,46 @@
             flex: 2;
         }
 
+        .expression-title {
+            font-weight: bold;
+            color: #88ccff;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .expression-control {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .expression-control label {
+            margin-bottom: 3px;
+        }
+
+        .expression-control input[type="range"] {
+            width: 100%;
+            height: 6px;
+            margin-top: 3px;
+        }
+
+        #expression-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: none;
+            min-width: 260px;
+            z-index: 100;
+        }
+
         button {
             background-color: #0e639c;
             color: white;
@@ -131,13 +171,15 @@
                     <label for="background-color">Background Color</label>
                     <input type="color" id="background-color" value="#303030">
                 </div>
-            </div>
-            <button id="reset-camera">Reset Camera</button>
+            </div> <button id="reset-camera">Reset Camera</button>
             <button id="reset-lights">Reset Lights</button>
+            <button id="reset-expressions">Reset Expressions</button>
         </div>
-    </div>
-
-    <!-- Three.jsとVRM関連ライブラリをCDNから読み込み -->
+        <div id="expression-controls">
+            <div class="expression-title">Expressions</div>
+            <div id="expression-sliders"></div>
+        </div>
+    </div> <!-- Three.jsとVRM関連ライブラリをCDNから読み込み -->
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/build/three.min.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/controls/OrbitControls.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
