@@ -6,6 +6,7 @@ Preview VRM files directly within the editor.
 
 - Preview VRM 3D model files directly in VS Code
 - Interactive 3D model viewer with camera controls
+- Expression controls to manipulate facial expressions
 - Support for VRM format (humanoid 3D avatar models)
 - Built with Three.js and @pixiv/three-vrm
 
@@ -21,6 +22,7 @@ Preview VRM files directly within the editor.
 - **Rotate**: Left-click and drag
 - **Pan**: Middle-click and drag or Shift + left-click and drag
 - **Zoom**: Mouse wheel or right-click and drag
+- **Expressions**: Use sliders to control facial expressions
 
 ## Configuration
 
