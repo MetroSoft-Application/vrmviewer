@@ -772,16 +772,30 @@ function setupVrm0xExpressionManager(vrm) {
 function addExpressionSlider(container, name, setValueFn, getValueFn) {
     const controlDiv = document.createElement('div');
     controlDiv.className = 'expression-control';
+    // コントロール全体にテキスト選択を防止
+    controlDiv.style.userSelect = 'none';
+    controlDiv.style.webkitUserSelect = 'none';
+    controlDiv.style.msUserSelect = 'none';
+    controlDiv.style.cursor = 'default';
 
     const labelContainer = document.createElement('div');
     labelContainer.style.display = 'flex';
     labelContainer.style.justifyContent = 'space-between';
     labelContainer.style.width = '100%';
     labelContainer.style.marginBottom = '4px';
+    // テキスト選択を防止
+    labelContainer.style.userSelect = 'none';
+    labelContainer.style.webkitUserSelect = 'none';
+    labelContainer.style.msUserSelect = 'none';
 
     const label = document.createElement('label');
     label.textContent = name;
     label.htmlFor = `expression-${name}`;
+    // ラベル自身にも選択防止を適用
+    label.style.userSelect = 'none';
+    label.style.webkitUserSelect = 'none';
+    label.style.msUserSelect = 'none';
+    label.style.cursor = 'default'; // カーソルをデフォルトに
 
     const valueDisplay = document.createElement('span');
     valueDisplay.textContent = '0.00';
@@ -791,6 +805,9 @@ function addExpressionSlider(container, name, setValueFn, getValueFn) {
     valueDisplay.style.minWidth = '40px';
     valueDisplay.style.display = 'inline-block';
     valueDisplay.style.textAlign = 'right';
+    valueDisplay.style.userSelect = 'none';
+    valueDisplay.style.webkitUserSelect = 'none';
+    valueDisplay.style.msUserSelect = 'none';
     valueDisplay.id = `expression-value-${name}`;
 
     labelContainer.appendChild(label);
@@ -1007,20 +1024,25 @@ function resetExpressions() {
 // 表情コントロールの要素スタイルを初期化する
 function setupExpressionControlsStyle() {
     if (expressionControlsElement) {
-        // コントロールのスタイルを直接設定
-        expressionControlsElement.style.position = 'absolute';
-        expressionControlsElement.style.bottom = '10px';
+        // コントロールのスタイルを直接設定        expressionControlsElement.style.position = 'absolute';
+        expressionControlsElement.style.top = '10px';  // 下から上に変更
         expressionControlsElement.style.left = '10px';
         expressionControlsElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
         expressionControlsElement.style.padding = '10px';
         expressionControlsElement.style.borderRadius = '5px';
         expressionControlsElement.style.color = 'white';
         expressionControlsElement.style.fontSize = '12px';
-        expressionControlsElement.style.maxHeight = '70vh';
+        expressionControlsElement.style.maxHeight = '90vh';
         expressionControlsElement.style.overflowY = 'auto';
-        expressionControlsElement.style.minWidth = '200px';
+        expressionControlsElement.style.minWidth = '260px';
         expressionControlsElement.style.zIndex = '100';
         expressionControlsElement.style.display = 'none';
+        // テキスト選択を防止するスタイルを追加
+        expressionControlsElement.style.userSelect = 'none';
+        expressionControlsElement.style.webkitUserSelect = 'none';
+        expressionControlsElement.style.msUserSelect = 'none';
+        // スライダー操作中のカーソルスタイルを変更しない
+        expressionControlsElement.style.cursor = 'default';
     }
 }
 
