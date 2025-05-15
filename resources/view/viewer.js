@@ -44,7 +44,13 @@ window.addEventListener('message', event => {
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reset-camera').addEventListener('click', resetCamera);
     document.getElementById('reset-lights').addEventListener('click', resetLights);
-    document.getElementById('reset-expressions').addEventListener('click', resetExpressions);
+
+    // 表情のリセットボタンにログ付きのイベントハンドラを設定
+    document.getElementById('reset-expressions').addEventListener('click', () => {
+        console.log('Reset Expressions button clicked');
+        sendDebugMessage('表情リセットボタンがクリックされました');
+        resetExpressions();
+    });
 
     // ライト調整スライダーのイベントリスナーを設定    document.getElementById('ambient-light').addEventListener('input', updateAmbientLight);
     document.getElementById('directional-light').addEventListener('input', updateDirectionalLight);
@@ -491,9 +497,25 @@ function animate() {
     requestAnimationFrame(animate);
     // コントロールの更新
     controls.update();
+
     // VRMの更新処理
-    if (currentVrm && typeof currentVrm.update === 'function') {
-        currentVrm.update(clock.getDelta());
+    if (currentVrm) {
+        const deltaTime = clock.getDelta();
+
+        // モデル全体の更新
+        if (typeof currentVrm.update === 'function') {
+            currentVrm.update(deltaTime);
+        }
+
+        // 表情マネージャーも明示的に更新
+        if (currentVrm.expressionManager && typeof currentVrm.expressionManager.update === 'function') {
+            currentVrm.expressionManager.update();
+        }
+
+        // VRM 0.xの場合は特に明示的にブレンドシェイプを更新
+        if (currentVrm.blendShapeProxy && typeof currentVrm.blendShapeProxy.update === 'function') {
+            currentVrm.blendShapeProxy.update();
+        }
     }
 
     // レンダリング
@@ -692,9 +714,7 @@ function setupVrm0xExpressionManager(vrm) {
         } catch (e) {
             // エラー処理を簡略化
         }
-    }
-
-    // VRM 1.0互換の表情マネージャーを作成
+    }    // VRM 1.0互換の表情マネージャーを作成
     vrm.expressionManager = {
         expressionMap: new Map(),
         setValue: (name, weight) => {
@@ -703,9 +723,19 @@ function setupVrm0xExpressionManager(vrm) {
                 const lowerName = name.toLowerCase();
                 const exactName = availablePresets.find(p => p.toLowerCase() === lowerName) || name;
 
-                vrm.blendShapeProxy.setValue(exactName, weight);
+                // 値が変更された場合のみ設定して更新を強制
+                const currentValue = vrm.blendShapeProxy.getValue(exactName) || 0;
+                if (currentValue !== weight) {
+                    vrm.blendShapeProxy.setValue(exactName, weight);
+
+                    // 即時更新を強制
+                    if (vrm.blendShapeProxy.update) {
+                        vrm.blendShapeProxy.update();
+                    }
+                }
                 return true;
             } catch (e) {
+                console.log(`Error setting expression ${name}: ${e.message}`);
                 return false;
             }
         },
@@ -716,6 +746,18 @@ function setupVrm0xExpressionManager(vrm) {
                 return vrm.blendShapeProxy.getValue(exactName) || 0;
             } catch (e) {
                 return 0;
+            }
+        },
+        // 全表情の更新を強制するメソッドを追加
+        update: () => {
+            try {
+                if (vrm.blendShapeProxy && vrm.blendShapeProxy.update) {
+                    vrm.blendShapeProxy.update();
+                }
+                return true;
+            } catch (e) {
+                console.log(`Error updating expressions: ${e.message}`);
+                return false;
             }
         }
     };
@@ -777,8 +819,13 @@ function addExpressionSlider(container, name, setValueFn, getValueFn) {
             const value = parseFloat(e.target.value);
             setValueFn(value);
             valueDisplay.textContent = value.toFixed(2);
+
+            // 変更が即座に反映されるよう、必要に応じてモデルの更新を強制
+            if (currentVrm && currentVrm.expressionManager && typeof currentVrm.expressionManager.update === 'function') {
+                currentVrm.expressionManager.update();
+            }
         } catch (error) {
-            console.log(`Error with slider ${name}`);
+            console.log(`Error with slider ${name}: ${error.message}`);
         }
     });
 
@@ -794,14 +841,40 @@ function resetExpressions() {
     }
 
     try {
+        // 前回に更新された表情リストを追跡
+        const resetExpressions = [];
+
         // VRM 1.0表情のリセット
         if (currentVrm.expressionManager && currentVrm.expressionManager.expressionMap) {
             try {
-                currentVrm.expressionManager.expressionMap.forEach((_, name) => {
+                // 全ての表情名を取得
+                const expressionNames = [];
+
+                if (currentVrm.expressionManager.expressionMap instanceof Map) {
+                    // Mapから表情名を収集
+                    currentVrm.expressionManager.expressionMap.forEach((_, name) => {
+                        expressionNames.push(name);
+                    });
+                } else if (typeof currentVrm.expressionManager.expressionMap === 'object') {
+                    // オブジェクトから表情名を収集
+                    Object.keys(currentVrm.expressionManager.expressionMap).forEach(name => {
+                        expressionNames.push(name);
+                    });
+                }
+
+                // 各表情を個別にリセット
+                expressionNames.forEach(name => {
                     try {
-                        currentVrm.expressionManager.setValue(name, 0);
+                        // 現在の値を確認し、0でなければリセット
+                        const currentValue = currentVrm.expressionManager.getValue(name);
+                        if (currentValue && currentValue > 0) {
+                            currentVrm.expressionManager.setValue(name, 0);
+                            resetExpressions.push(name);
+                            // デバッグログでリセット操作を記録
+                            console.log(`Reset expression: ${name} (from ${currentValue} to 0)`);
+                        }
                     } catch (innerError) {
-                        // エラー処理を簡略化
+                        console.log(`Failed to reset expression ${name}: ${innerError.message}`);
                     }
                 });
             } catch (e) {
@@ -817,31 +890,81 @@ function resetExpressions() {
             // 標準プリセットを試す
             presets.forEach(preset => {
                 try {
-                    currentVrm.blendShapeProxy.setValue(preset, 0);
+                    // 現在値をチェック
+                    let currentValue = 0;
+                    try {
+                        currentValue = currentVrm.blendShapeProxy.getValue(preset);
+                    } catch (e) {
+                        // 値の取得に失敗した場合は無視
+                    }
+
+                    if (currentValue && currentValue > 0) {
+                        currentVrm.blendShapeProxy.setValue(preset, 0);
+                        resetExpressions.push(preset);
+                        console.log(`Reset VRM 0.x preset: ${preset} (from ${currentValue} to 0)`);
+                    }
                 } catch (e) {
                     // 大文字でも試す
                     try {
                         const upperPreset = preset.toUpperCase();
-                        currentVrm.blendShapeProxy.setValue(upperPreset, 0);
+                        let currentValue = 0;
+                        try {
+                            currentValue = currentVrm.blendShapeProxy.getValue(upperPreset);
+                        } catch (e) {
+                            // 値の取得に失敗した場合は無視
+                        }
+
+                        if (currentValue && currentValue > 0) {
+                            currentVrm.blendShapeProxy.setValue(upperPreset, 0);
+                            resetExpressions.push(upperPreset);
+                            console.log(`Reset VRM 0.x preset (uppercase): ${upperPreset} (from ${currentValue} to 0)`);
+                        }
                     } catch (innerE) {
-                        // 無視
+                        console.log(`Failed to reset VRM 0.x expression ${preset}: ${e.message}`);
                     }
                 }
             });
 
-            // VRM 0.x互換レイヤーを通じて全てのカスタムブレンドシェイプもリセット
-            if (currentVrm.expressionManager && currentVrm.expressionManager.expressionMap) {
-                try {
-                    currentVrm.expressionManager.expressionMap.forEach((_, name) => {
+            // カスタムブレンドシェイプも探索して直接リセット
+            try {
+                if (currentVrm.blendShapeProxy._blendShapeGroups) {
+                    const keys = Object.keys(currentVrm.blendShapeProxy._blendShapeGroups);
+                    keys.forEach(key => {
                         try {
-                            currentVrm.expressionManager.setValue(name, 0);
+                            // 現在値をチェック
+                            let currentValue = 0;
+                            try {
+                                currentValue = currentVrm.blendShapeProxy.getValue(key);
+                            } catch (e) {
+                                // 値の取得に失敗した場合は無視
+                            }
+
+                            if (currentValue && currentValue > 0) {
+                                currentVrm.blendShapeProxy.setValue(key, 0);
+                                resetExpressions.push(key);
+                                console.log(`Reset custom VRM 0.x expression: ${key} (from ${currentValue} to 0)`);
+                            }
                         } catch (e) {
-                            // 無視
+                            console.log(`Failed to reset custom expression ${key}: ${e.message}`);
                         }
                     });
-                } catch (e) {
-                    // エラー処理を簡略化
                 }
+            } catch (e) {
+                console.log(`Error accessing blendShapeGroups: ${e.message}`);
+            }
+        }
+
+        // 表情コントロール更新後に1フレームの強制更新を行う
+        if (currentVrm.update) {
+            currentVrm.update(0);
+        }
+
+        // アニメーション反映のため手動で更新を強制
+        if (resetExpressions.length > 0 && currentVrm.expressionManager) {
+            // 一度すべての表情を適用するよう明示的に指示
+            if (typeof currentVrm.expressionManager.update === 'function') {
+                currentVrm.expressionManager.update();
+                console.log('Called expressionManager.update() to apply changes');
             }
         }
 
@@ -863,7 +986,7 @@ function resetExpressions() {
                     }
                 }
             } catch (e) {
-                // エラー処理を簡略化
+                console.log(`Error updating slider UI: ${e.message}`);
             }
         });
 
@@ -871,8 +994,13 @@ function resetExpressions() {
         if (expressionControlsElement) {
             expressionControlsElement.style.display = 'block';
         }
+
+        // 表情のリセット完了をログ出力
+        console.log(`表情リセット完了: ${resetExpressions.length}個の表情をリセットしました`);
+        sendDebugMessage(`表情リセット完了: ${resetExpressions.length}個の表情をリセットしました`);
     } catch (error) {
-        console.log('Error in reset expressions');
+        console.log(`Error in reset expressions: ${error.message}`);
+        sendDebugMessage(`表情リセットエラー: ${error.message}`);
     }
 }
 
