@@ -171,7 +171,8 @@
                     <label for="background-color">Background Color</label>
                     <input type="color" id="background-color" value="#303030">
                 </div>
-            </div> <button id="reset-camera">Reset Camera</button>
+            </div>
+            <button id="reset-camera">Reset Camera</button>
             <button id="reset-lights">Reset Lights</button>
             <button id="reset-expressions">Reset Expressions</button>
         </div>
@@ -179,11 +180,18 @@
             <div class="expression-title">Expressions</div>
             <div id="expression-sliders"></div>
         </div>
-    </div> <!-- Three.jsとVRM関連ライブラリをCDNから読み込み -->
+    </div>
+
+    <!-- Three.jsとVRM関連ライブラリをCDNから読み込み -->
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/build/three.min.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/controls/OrbitControls.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/@pixiv/three-vrm@1.0.9/lib/three-vrm.js"></script>
+
+    <!-- モジュールファイルを読み込み -->
+    <script nonce="{{nonce}}" src="{{sceneManagerJsPath}}"></script>
+    <script nonce="{{nonce}}" src="{{vrmLoaderJsPath}}"></script>
+    <script nonce="{{nonce}}" src="{{vrmUIJsPath}}"></script>
 
     <!-- メインスクリプトを外部ファイルから読み込み -->
     <script nonce="{{nonce}}" src="{{viewerJsPath}}"></script>
