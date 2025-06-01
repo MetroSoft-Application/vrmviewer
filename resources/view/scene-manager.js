@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
 let container, camera, scene, renderer, controls;
 let ambientLight, directionalLight;
 let isInitialized = false;
+let boneController = null;
 
 function initializeScene() {
     if (isInitialized) return;
@@ -111,6 +112,11 @@ function animate() {
     requestAnimationFrame(animate);
     controls.update();
 
+    // ボーンコントローラーの更新処理を追加
+    if (boneController) {
+        boneController.update();
+    }
+
     if (window.currentVrm) {
         const deltaTime = clock.getDelta();
 
@@ -130,6 +136,34 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// ボーンコントローラーを初期化する関数を追加
+function initBoneController() {
+    if (!scene || !camera || !renderer) {
+        console.error('ボーンコントローラーの初期化に必要な要素が不足しています');
+        return;
+    }
+
+    boneController = new BoneController(scene, camera, renderer.domElement);
+    console.log('ボーンコントローラーを初期化しました');
+}
+
+// VRMモデルをボーンコントローラーに設定する関数を追加
+function setBoneControllerVRM(vrm) {
+    if (boneController) {
+        boneController.setVRM(vrm);
+    }
+}
+
+// ボーンコントローラーのインスタンスを取得する関数を追加
+function getBoneController() {
+    return boneController;
+}
+
 function getCurrentVrm() {
     return window.currentVrm;
+}
+
+// グローバルアクセス用にcontrolsを公開
+function getOrbitControls() {
+    return controls;
 }

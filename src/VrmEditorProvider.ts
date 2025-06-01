@@ -96,6 +96,7 @@ export class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
         const sceneManagerJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'scene-manager.js'));
         const vrmLoaderJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'vrm-loader.js'));
         const vrmUIJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'vrm-ui.js'));
+        const boneControllerJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'bone-controller.js'));
 
         let htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf8');
         htmlContent = htmlContent
@@ -104,7 +105,8 @@ export class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
             .replace(/{{viewerJsPath}}/g, viewerJsPath.toString())
             .replace(/{{sceneManagerJsPath}}/g, sceneManagerJsPath.toString())
             .replace(/{{vrmLoaderJsPath}}/g, vrmLoaderJsPath.toString())
-            .replace(/{{vrmUIJsPath}}/g, vrmUIJsPath.toString());
+            .replace(/{{vrmUIJsPath}}/g, vrmUIJsPath.toString())
+            .replace(/{{boneControllerJsPath}}/g, boneControllerJsPath.toString());
 
         return htmlContent;
     }

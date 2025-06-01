@@ -26,6 +26,12 @@ function setupGlobalFunctions() {
     window.initializeExpressions = initializeExpressions;
     window.resetExpressions = resetExpressions;
     window.ensureExpressionControlsVisible = ensureExpressionControlsVisible;
+    // ボーンコントローラー関連の関数をグローバルに公開
+    window.initBoneController = initBoneController;
+    window.setBoneControllerVRM = setBoneControllerVRM;
+    window.getBoneController = getBoneController;
+    // OrbitControlsアクセス用関数を公開
+    window.getOrbitControls = getOrbitControls;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -34,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initVrmUIElements();
         initializeScene();
         setupGlobalFunctions();
+        
+        // ボーンコントローラーを初期化
+        setTimeout(() => {
+            initBoneController();
+        }, 100);
 
         document.getElementById('reset-camera').addEventListener('click', resetCamera);
         document.getElementById('reset-lights').addEventListener('click', resetLights);
@@ -52,6 +63,9 @@ function onVrmLoadSuccess(vrm, fileName) {
     displayVrmMetadata(vrm);
     resetCamera();
     resetExpressions();
+
+    // ボーンコントローラーにVRMモデルを設定
+    setBoneControllerVRM(vrm);
 
     setTimeout(() => {
         try {
