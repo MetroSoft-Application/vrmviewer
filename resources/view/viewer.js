@@ -1,5 +1,9 @@
 const vscode = acquireVsCodeApi();
 
+/**
+ * デバッグメッセージを送信
+ * @param {string} message デバッグメッセージ
+ */
 function sendDebugMessage(message) {
     console.log(message);
     vscode.postMessage({ type: 'debug', message: message });
@@ -12,6 +16,9 @@ window.addEventListener('message', event => {
     }
 });
 
+/**
+ * グローバル関数を設定
+ */
 function setupGlobalFunctions() {
     window.addVrmToScene = addVrmToScene;
     window.resetCamera = resetCamera;
@@ -58,6 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+/**
+ * VRM読み込み成功時の処理
+ * @param {VRM} vrm VRMモデル
+ * @param {string} fileName ファイル名
+ */
 function onVrmLoadSuccess(vrm, fileName) {
     addVrmToScene(vrm);
     displayVrmMetadata(vrm);
@@ -82,6 +94,11 @@ function onVrmLoadSuccess(vrm, fileName) {
     });
 }
 
+/**
+ * VRM読み込みエラー時の処理
+ * @param {Error} error エラーオブジェクト
+ * @param {string} context エラーのコンテキスト
+ */
 function onVrmLoadError(error, context) {
     sendDebugMessage(`VRM読み込みエラー (${context}): ${error.message || error}`);
 
@@ -96,6 +113,11 @@ function onVrmLoadError(error, context) {
     });
 }
 
+/**
+ * Base64データからVRMを読み込み
+ * @param {string} base64String Base64エンコードされたVRMデータ
+ * @param {string} fileName ファイル名
+ */
 function loadVrmFromBase64(base64String, fileName) {
     console.log(`VRM読み込み開始: ${fileName}`);
     sendDebugMessage(`VRM読み込み開始: ${fileName}`);

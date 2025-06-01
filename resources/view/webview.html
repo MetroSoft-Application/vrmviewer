@@ -123,6 +123,9 @@
             color: #88ccff;
             margin-bottom: 8px;
             font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .bone-selector-container {
@@ -136,9 +139,13 @@
 
         #boneSelector {
             width: 100%;
+            max-width: 100%;
             padding: 4px;
             border-radius: 3px;
             border: none;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .bone-mode-buttons {
@@ -171,7 +178,9 @@
             max-height: 90vh;
             overflow-y: auto;
             display: none;
-            min-width: 260px;
+            width: 130px;
+            max-width: 130px;
+            box-sizing: border-box;
             z-index: 100;
         }
 

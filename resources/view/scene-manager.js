@@ -16,6 +16,9 @@ let ambientLight, directionalLight;
 let isInitialized = false;
 let boneController = null;
 
+/**
+ * シーンの初期化処理
+ */
 function initializeScene() {
     if (isInitialized) return;
 
@@ -55,14 +58,20 @@ function initializeScene() {
 
     animate();
     updateLightControlsUI();
-
     isInitialized = true;
 }
 
+/**
+ * VRMモデルをシーンに追加
+ * @param {VRM} vrm VRMモデル
+ */
 function addVrmToScene(vrm) {
     scene.add(vrm.scene);
 }
 
+/**
+ * カメラ位置をデフォルトにリセット
+ */
 function resetCamera() {
     camera.position.set(
         DEFAULT_SETTINGS.cameraPosition.x,
@@ -73,21 +82,36 @@ function resetCamera() {
     controls.update();
 }
 
+/**
+ * 環境光の強度を更新
+ * @param {Event} event イベントオブジェクト
+ */
 function updateAmbientLight(event) {
     const intensity = parseFloat(event.target.value);
     ambientLight.intensity = intensity;
 }
 
+/**
+ * 指向性ライトの強度を更新
+ * @param {Event} event イベントオブジェクト
+ */
 function updateDirectionalLight(event) {
     const intensity = parseFloat(event.target.value);
     directionalLight.intensity = intensity;
 }
 
+/**
+ * 背景色を更新
+ * @param {Event} event イベントオブジェクト
+ */
 function updateBackgroundColor(event) {
     const color = event.target.value;
     scene.background = new THREE.Color(color);
 }
 
+/**
+ * ライト設定をデフォルトにリセット
+ */
 function resetLights() {
     ambientLight.intensity = DEFAULT_SETTINGS.ambientIntensity;
     directionalLight.intensity = DEFAULT_SETTINGS.directionalIntensity;
@@ -95,19 +119,27 @@ function resetLights() {
     updateLightControlsUI();
 }
 
+/**
+ * ライトコントロールUIを更新
+ */
 function updateLightControlsUI() {
     document.getElementById('ambient-light').value = ambientLight.intensity;
     document.getElementById('directional-light').value = directionalLight.intensity;
-    document.getElementById('background-color').value = '#' +
-        new THREE.Color(scene.background).getHexString();
+    document.getElementById('background-color').value = '#' + new THREE.Color(scene.background).getHexString();
 }
 
+/**
+ * ウィンドウリサイズ時の処理
+ */
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+/**
+ * アニメーションループ
+ */
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
@@ -132,11 +164,12 @@ function animate() {
             window.currentVrm.blendShapeProxy.update();
         }
     }
-
     renderer.render(scene, camera);
 }
 
-// ボーンコントローラーを初期化する関数を追加
+/**
+ * ボーンコントローラーを初期化する関数
+ */
 function initBoneController() {
     if (!scene || !camera || !renderer) {
         console.error('ボーンコントローラーの初期化に必要な要素が不足しています');
@@ -147,23 +180,36 @@ function initBoneController() {
     console.log('ボーンコントローラーを初期化しました');
 }
 
-// VRMモデルをボーンコントローラーに設定する関数を追加
+/**
+ * VRMモデルをボーンコントローラーに設定する関数
+ * @param {VRM} vrm VRMモデル
+ */
 function setBoneControllerVRM(vrm) {
     if (boneController) {
         boneController.setVRM(vrm);
     }
 }
 
-// ボーンコントローラーのインスタンスを取得する関数を追加
+/**
+ * ボーンコントローラーのインスタンスを取得する関数
+ * @returns {BoneController} ボーンコントローラーのインスタンス
+ */
 function getBoneController() {
     return boneController;
 }
 
+/**
+ * 現在のVRMモデルを取得
+ * @returns {VRM} 現在のVRMモデル
+ */
 function getCurrentVrm() {
     return window.currentVrm;
 }
 
-// グローバルアクセス用にcontrolsを公開
+/**
+ * OrbitControlsを取得
+ * @returns {THREE.OrbitControls} OrbitControlsのインスタンス
+ */
 function getOrbitControls() {
     return controls;
 }

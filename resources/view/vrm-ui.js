@@ -1,10 +1,17 @@
 let expressionControlsElement;
 
+/**
+ * VRM UI要素を初期化
+ */
 function initVrmUIElements() {
     expressionControlsElement = document.getElementById('left-controls');
     setupExpressionControlsStyle();
 }
 
+/**
+ * VRMメタデータを表示
+ * @param {VRM} vrm VRMモデル
+ */
 function displayVrmMetadata(vrm) {
     const metadataElement = document.getElementById('metadata');
     metadataElement.innerHTML = '<div class="metadata-title">VRM Metadata</div>';
@@ -76,6 +83,11 @@ function displayVrmMetadata(vrm) {
     }
 }
 
+/**
+ * メタデータアイテムを追加
+ * @param {string|Object} itemOrText アイテムまたはテキスト
+ * @param {Object} meta メタデータオブジェクト
+ */
 function appendMetadataItem(itemOrText, meta) {
     const metadataElement = document.getElementById('metadata');
     const div = document.createElement('div');
@@ -108,6 +120,9 @@ function appendMetadataItem(itemOrText, meta) {
     metadataElement.appendChild(div);
 }
 
+/**
+ * 表情コントロールを初期化
+ */
 function initExpressionControls() {
     const expressionControlsEl = document.getElementById('left-controls');
     const container = document.getElementById('expression-sliders');
@@ -185,15 +200,19 @@ function initExpressionControls() {
         controlDiv.appendChild(label);
         controlDiv.appendChild(slider);
         container.appendChild(controlDiv);
-    });
-
-    ensureExpressionControlsVisible();
+    }); ensureExpressionControlsVisible();
 }
 
+/**
+ * 表情システムを初期化
+ */
 function initializeExpressions() {
     initExpressionControls();
 }
 
+/**
+ * 表情をリセット
+ */
 function resetExpressions() {
     const vrm = window.currentVrm;
     if (!vrm) return;
@@ -220,6 +239,9 @@ function resetExpressions() {
     });
 }
 
+/**
+ * 表情コントロールの表示を確保
+ */
 function ensureExpressionControlsVisible() {
     if (expressionControlsElement) {
         const container = document.getElementById('expression-sliders');
@@ -231,6 +253,9 @@ function ensureExpressionControlsVisible() {
     }
 }
 
+/**
+ * 表情コントロールのスタイルを設定
+ */
 function setupExpressionControlsStyle() {
     if (!expressionControlsElement) return;
 

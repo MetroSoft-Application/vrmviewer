@@ -18,8 +18,8 @@ class BoneController {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.modelMeshes = [];
-        this.clickListenerInitialized = false; this.debugMode = true;
-
+        this.clickListenerInitialized = false;
+        this.debugMode = true;
         this.init();
     }
 
@@ -105,7 +105,7 @@ class BoneController {
 
     /**
      * トランスフォームモードを設定
-     * @param {string} mode モード名 ('rotate', 'translate', 'scale')
+     * @param {string} mode モード名
      */
     setTransformMode(mode) {
         if (this.transformControls) {

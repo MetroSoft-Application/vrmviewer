@@ -2,11 +2,21 @@ let loadingElement, metadataElement;
 let onVrmLoadSuccessCallback = null;
 let onVrmLoadErrorCallback = null;
 
+/**
+ * ローダー要素を初期化
+ */
 function initLoaderElements() {
     loadingElement = document.getElementById('loading');
     metadataElement = document.getElementById('metadata');
 }
 
+/**
+ * Base64データからVRMモデルを読み込み
+ * @param {string} base64String Base64エンコードされたVRMデータ
+ * @param {string} fileName ファイル名
+ * @param {Function} onSuccessCallback 成功時のコールバック関数
+ * @param {Function} onErrorCallback エラー時のコールバック関数
+ */
 function loadVrmFromBase64Data(base64String, fileName, onSuccessCallback, onErrorCallback) {
     onVrmLoadSuccessCallback = onSuccessCallback;
     onVrmLoadErrorCallback = onErrorCallback;
@@ -39,6 +49,10 @@ function loadVrmFromBase64Data(base64String, fileName, onSuccessCallback, onErro
     }
 }
 
+/**
+ * GLTFロード成功時の処理
+ * @param {Object} gltf GLTFオブジェクト
+ */
 function handleGltfLoad(gltf) {
     const vrm = gltf.userData.vrm;
 
@@ -56,6 +70,10 @@ function handleGltfLoad(gltf) {
     }
 }
 
+/**
+ * VRM 1.0モデルの処理
+ * @param {VRM} vrm VRMモデル
+ */
 function handleVrm10Model(vrm) {
     window.currentVrm = vrm;
     vrm.scene.rotation.y = determineModelOrientation(vrm);
@@ -72,6 +90,10 @@ function handleVrm10Model(vrm) {
     }
 }
 
+/**
+ * VRM 0.x モデルの処理
+ * @param {Object} gltf GLTFオブジェクト
+ */
 function handleVrm0xModel(gltf) {
     THREE.VRM.from(gltf)
         .then((vrm) => {
@@ -97,6 +119,11 @@ function handleVrm0xModel(gltf) {
         });
 }
 
+/**
+ * ロードエラー時の処理
+ * @param {Error} error エラーオブジェクト
+ * @param {string} prefix エラーメッセージのプレフィックス
+ */
 function handleLoadError(error, prefix = 'VRM Loading Error') {
     if (loadingElement) {
         loadingElement.textContent = `Error: ${error.message || 'Failed to load VRM model'}`;
@@ -108,6 +135,11 @@ function handleLoadError(error, prefix = 'VRM Loading Error') {
     }
 }
 
+/**
+ * モデルの向きを決定
+ * @param {VRM} vrm VRMモデル
+ * @returns {number} 回転角度
+ */
 function determineModelOrientation(vrm) {
     if (!vrm || !vrm.meta) {
         return 0;
@@ -120,6 +152,10 @@ function determineModelOrientation(vrm) {
     }
 }
 
+/**
+ * VRM 0.x の表情管理システムをセットアップ
+ * @param {VRM} vrm VRMモデル
+ */
 function setupVrm0xExpressionManager(vrm) {
     if (vrm.blendShapeProxy) {
         const expressions = {};
@@ -158,6 +194,10 @@ function setupVrm0xExpressionManager(vrm) {
     }
 }
 
+/**
+ * VRM 1.0 の表情管理システムをセットアップ
+ * @param {VRM} vrm VRMモデル
+ */
 function setupVrm10ExpressionManager(vrm) {
     if (vrm.expressionManager && vrm.expressionManager.expressionMap) {
         const expressions = {};

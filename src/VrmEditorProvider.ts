@@ -89,7 +89,8 @@ export class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
      * WebView用のHTMLを生成する
      * @param webview - HTML内容を設定するWebViewインスタンス
      * @returns WebViewに表示するHTML文字列
-     */    private getHtmlForWebview(webview: vscode.Webview): string {
+     */
+    private getHtmlForWebview(webview: vscode.Webview): string {
         const nonce = this.getNonce();
         const htmlPath = vscode.Uri.file(path.join(this.context.extensionPath, 'resources', 'view', 'webview.html'));
         const viewerJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'viewer.js'));
