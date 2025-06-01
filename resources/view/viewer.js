@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initVrmUIElements();
         initializeScene();
         setupGlobalFunctions();
-        
+
         // ボーンコントローラーを初期化
         setTimeout(() => {
             initBoneController();

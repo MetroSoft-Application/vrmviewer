@@ -1,12 +1,12 @@
 /**
- * VRMモデルのボーンを操作するためのコントローラークラス
+ * VRMモデルのボーン操作を行うコントローラクラス
  */
 class BoneController {
     /**
      * コンストラクタ
      * @param {THREE.Scene} scene THREE.jsのシーンオブジェクト
      * @param {THREE.Camera} camera カメラオブジェクト
-     * @param {HTMLCanvasElement} rendererElement レンダラーのcanvas要素
+     * @param {HTMLCanvasElement} rendererElement レンダラーのキャンバス要素
      */
     constructor(scene, camera, rendererElement) {
         this.scene = scene;
@@ -18,47 +18,25 @@ class BoneController {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this.modelMeshes = [];
-        this.clickListenerInitialized = false;
-        this.debugMode = true;
-
-        this.boneDefinitions = {
-            hips: '腰',
-            spine: '背骨',
-            chest: '胸',
-            upperChest: '上胸',
-            neck: '首',
-            head: '頭',
-            leftShoulder: '左肩',
-            leftUpperArm: '左上腕',
-            leftLowerArm: '左前腕',
-            leftHand: '左手',
-            rightShoulder: '右肩',
-            rightUpperArm: '右上腕',
-            rightLowerArm: '右前腕',
-            rightHand: '右手',
-            leftUpperLeg: '左太もも',
-            leftLowerLeg: '左すね',
-            leftFoot: '左足',
-            rightUpperLeg: '右太もも',
-            rightLowerLeg: '右すね',
-            rightFoot: '右足'
-        };
+        this.clickListenerInitialized = false; this.debugMode = true;
 
         this.init();
     }
 
     /**
-     * 初期化処理
+     * Initialization process
      */
     init() {
         this.initTransformControls();
         this.setupBoneSelector();
         this.setupTransformModeButtons();
-        
+
         if (this.debugMode) {
-            console.log('ボーンコントローラーを初期化しました');
+            console.log('Bone controller initialized');
         }
-    }    /**
+    }
+
+    /**
      * TransformControlsの初期化
      */
     initTransformControls() {
@@ -93,96 +71,33 @@ class BoneController {
      * ボーンセレクターのセットアップ
      */
     setupBoneSelector() {
-        const existingSelector = document.getElementById('boneSelector');
-        if (existingSelector) {
+        const selector = document.getElementById('boneSelector');
+        if (!selector) {
+            console.error('ボーンセレクターが見つかりません');
             return;
         }
-
-        const controlsContainer = document.getElementById('controls');
-        if (!controlsContainer) {
-            console.error('コントロールコンテナが見つかりません');
-            return;
-        }
-
-        const boneControlsDiv = document.createElement('div');
-        boneControlsDiv.id = 'bone-controls';
-        boneControlsDiv.style.cssText = `
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-            font-size: 12px;
-            margin-bottom: 8px;
-        `;
-
-        const title = document.createElement('div');
-        title.textContent = 'ボーン操作';
-        title.style.cssText = `
-            font-weight: bold;
-            color: #88ccff;
-            margin-bottom: 8px;
-            font-size: 14px;
-        `;
-        boneControlsDiv.appendChild(title);
-
-        const selectorContainer = document.createElement('div');
-        selectorContainer.style.cssText = 'margin-bottom: 8px;';
-
-        const selectorLabel = document.createElement('label');
-        selectorLabel.textContent = 'ボーン選択:';
-        selectorLabel.style.cssText = 'display: block; margin-bottom: 3px;';
-        selectorContainer.appendChild(selectorLabel);
-
-        const selector = document.createElement('select');
-        selector.id = 'boneSelector';
-        selector.style.cssText = 'width: 100%; padding: 4px; border-radius: 3px; border: none;';
-
-        Object.entries(this.boneDefinitions).forEach(([boneName, japaneseName]) => {
-            const option = document.createElement('option');
-            option.value = boneName;
-            option.text = japaneseName;
-            selector.appendChild(option);
-        });
 
         selector.addEventListener('change', this.onBoneSelectorChange.bind(this));
-        selectorContainer.appendChild(selector);
-        boneControlsDiv.appendChild(selectorContainer);
 
-        const modeButtonsContainer = document.createElement('div');
-        modeButtonsContainer.style.cssText = 'display: flex; gap: 4px; margin-bottom: 8px;';
-
-        const modes = [
-            { id: 'rotateMode', text: '回転', mode: 'rotate' },
-            { id: 'translateMode', text: '移動', mode: 'translate' },
-            { id: 'scaleMode', text: '拡縮', mode: 'scale' }
-        ];
-
-        modes.forEach(({ id, text, mode }) => {
-            const button = document.createElement('button');
-            button.id = id;
-            button.textContent = text;
-            button.style.cssText = 'flex: 1; padding: 4px 8px; font-size: 11px;';
-            button.addEventListener('click', () => {
-                this.setTransformMode(mode);
-                this.updateModeButtons(mode);
+        // 回転モードボタンのセットアップ
+        const rotateButton = document.getElementById('rotateMode');
+        if (rotateButton) {
+            rotateButton.addEventListener('click', () => {
+                this.setTransformMode('rotate');
+                this.updateModeButtons('rotate');
             });
-            modeButtonsContainer.appendChild(button);
-        });
-
-        boneControlsDiv.appendChild(modeButtonsContainer);
-
-        const instructionDiv = document.createElement('div');
-        instructionDiv.style.cssText = 'font-size: 10px; color: #cccccc; margin-top: 5px;';
-        instructionDiv.textContent = 'モデルをクリックしてボーンを選択できます';
-        boneControlsDiv.appendChild(instructionDiv);
-
-        controlsContainer.insertBefore(boneControlsDiv, controlsContainer.firstChild);
+        }
 
         this.updateModeButtons('rotate');
+
+        if (this.debugMode) {
+            console.log('ボーンセレクターをセットアップしました');
+        }
     }
 
     /**
      * トランスフォームモードボタンのセットアップ
+     * 回転モード固定のため不要
      */
     setupTransformModeButtons() {
         this.updateModeButtons('rotate');
@@ -195,7 +110,7 @@ class BoneController {
     setTransformMode(mode) {
         if (this.transformControls) {
             this.transformControls.setMode(mode);
-            
+
             if (this.debugMode) {
                 console.log(`トランスフォームモードを変更: ${mode}`);
             }
@@ -207,7 +122,7 @@ class BoneController {
      * @param {string} activeMode アクティブなモード名
      */
     updateModeButtons(activeMode) {
-        const modes = ['rotate', 'translate', 'scale'];
+        const modes = ['rotate'];
 
         modes.forEach(mode => {
             const button = document.getElementById(`${mode}Mode`);
@@ -270,7 +185,9 @@ class BoneController {
             const rotation = this.selectedBone.rotation;
             console.log(`ボーン回転変更: ${boneName} x=${(rotation.x * 180 / Math.PI).toFixed(1)}° y=${(rotation.y * 180 / Math.PI).toFixed(1)}° z=${(rotation.z * 180 / Math.PI).toFixed(1)}°`);
         }
-    }    /**
+    }
+
+    /**
      * ドラッグ状態変更イベントハンドラ
      * @param {object} event イベントオブジェクト
      */
@@ -279,12 +196,14 @@ class BoneController {
         const orbitControls = window.getOrbitControls ? window.getOrbitControls() : null;
         if (orbitControls) {
             orbitControls.enabled = !event.value;
-            
+
             if (this.debugMode) {
                 console.log(`OrbitControls ${event.value ? '無効化' : '有効化'}`);
             }
         }
-    }    /**
+    }
+
+    /**
      * マウスリリースイベントハンドラ
      */
     onMouseUp() {
@@ -310,7 +229,13 @@ class BoneController {
     getBoneNameFromObject(boneObject) {
         if (!this.currentVrm || !this.currentVrm.humanoid) return null;
 
-        for (const boneName of Object.keys(this.boneDefinitions)) {
+        // HTMLの選択肢からボーン名リストを取得
+        const selector = document.getElementById('boneSelector');
+        if (!selector) return null;
+
+        const boneNames = Array.from(selector.options).map(option => option.value);
+
+        for (const boneName of boneNames) {
             const bone = this.currentVrm.humanoid.getNormalizedBoneNode(boneName);
             if (bone === boneObject) {
                 return boneName;
@@ -333,7 +258,9 @@ class BoneController {
         if (this.debugMode) {
             console.log('モデルクリック検出が有効になりました');
         }
-    }    /**
+    }
+
+    /**
      * モデルクリック時の処理
      * @param {MouseEvent} event マウスイベント
      */
@@ -398,7 +325,13 @@ class BoneController {
         let closestBone = null;
         const maxDistance = 5.0;
 
-        for (const boneName of Object.keys(this.boneDefinitions)) {
+        // HTMLの選択肢からボーン名リストを取得
+        const selector = document.getElementById('boneSelector');
+        if (!selector) return;
+
+        const boneNames = Array.from(selector.options).map(option => option.value);
+
+        for (const boneName of boneNames) {
             const bone = this.currentVrm.humanoid.getNormalizedBoneNode(boneName);
 
             if (bone) {
@@ -474,7 +407,7 @@ class BoneController {
             this.scene.remove(this.transformControls);
             this.transformControls.dispose();
         }
-        
+
         if (this.clickListenerInitialized && this.rendererElement) {
             this.rendererElement.removeEventListener('click', this.onModelClick.bind(this));
         }

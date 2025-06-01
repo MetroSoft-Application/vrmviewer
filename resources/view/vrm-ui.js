@@ -1,7 +1,7 @@
 let expressionControlsElement;
 
 function initVrmUIElements() {
-    expressionControlsElement = document.getElementById('expression-controls');
+    expressionControlsElement = document.getElementById('left-controls');
     setupExpressionControlsStyle();
 }
 
@@ -109,7 +109,7 @@ function appendMetadataItem(itemOrText, meta) {
 }
 
 function initExpressionControls() {
-    const expressionControlsEl = document.getElementById('expression-controls');
+    const expressionControlsEl = document.getElementById('left-controls');
     const container = document.getElementById('expression-sliders');
 
     if (!expressionControlsEl || !container) {
