@@ -8,7 +8,6 @@
         content="default-src 'none'; img-src {{cspSource}} blob:; style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}' https://unpkg.com; connect-src blob:;">
     <title>VRM Viewer</title>
 
-    <!-- スタイルを直接埋め込み -->
     <style>
         body,
         html {
@@ -111,13 +110,63 @@
             margin-bottom: 3px;
         }
 
+        #bone-controls {
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .bone-title {
+            font-weight: bold;
+            color: #88ccff;
+            margin-bottom: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bone-selector-container {
+            margin-bottom: 8px;
+        }
+
+        .bone-selector-label {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        #boneSelector {
+            width: 100%;
+            max-width: 100%;
+            padding: 4px;
+            border-radius: 3px;
+            border: none;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bone-mode-buttons {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .bone-instruction {
+            font-size: 10px;
+            color: #cccccc;
+            margin-top: 5px;
+        }
+
         .expression-control input[type="range"] {
             width: 100%;
             height: 6px;
             margin-top: 3px;
         }
 
-        #expression-controls {
+        #left-controls {
             position: absolute;
             top: 10px;
             left: 10px;
@@ -129,7 +178,9 @@
             max-height: 90vh;
             overflow-y: auto;
             display: none;
-            min-width: 260px;
+            width: 130px;
+            max-width: 130px;
+            box-sizing: border-box;
             z-index: 100;
         }
 
@@ -137,10 +188,13 @@
             background-color: #0e639c;
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 3px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
+            width: 100%;
+            margin-bottom: 4px;
+            box-sizing: border-box;
         }
 
         button:hover {
@@ -171,21 +225,57 @@
                     <label for="background-color">Background Color</label>
                     <input type="color" id="background-color" value="#303030">
                 </div>
-            </div> <button id="reset-camera">Reset Camera</button>
+            </div>
+            <button id="reset-camera">Reset Camera</button>
             <button id="reset-lights">Reset Lights</button>
+            <button id="reset-bones">Reset Bones</button>
             <button id="reset-expressions">Reset Expressions</button>
         </div>
-        <div id="expression-controls">
+
+        <div id="left-controls">
+            <div id="bone-controls">
+                <div class="bone-title">Bone Select</div>
+                <div class="bone-selector-container">
+                    <select id="boneSelector">
+                        <option value="hips">Hips</option>
+                        <option value="spine">Spine</option>
+                        <option value="chest">Chest</option>
+                        <option value="upperChest">Upper Chest</option>
+                        <option value="neck">Neck</option>
+                        <option value="head">Head</option>
+                        <option value="leftShoulder">Left Shoulder</option>
+                        <option value="leftUpperArm">Left Upper Arm</option>
+                        <option value="leftLowerArm">Left Lower Arm</option>
+                        <option value="leftHand">Left Hand</option>
+                        <option value="rightShoulder">Right Shoulder</option>
+                        <option value="rightUpperArm">Right Upper Arm</option>
+                        <option value="rightLowerArm">Right Lower Arm</option>
+                        <option value="rightHand">Right Hand</option>
+                        <option value="leftUpperLeg">Left Upper Leg</option>
+                        <option value="leftLowerLeg">Left Lower Leg</option>
+                        <option value="leftFoot">Left Foot</option>
+                        <option value="rightUpperLeg">Right Upper Leg</option>
+                        <option value="rightLowerLeg">Right Lower Leg</option>
+                        <option value="rightFoot">Right Foot</option>
+                    </select>
+                </div>
+            </div>
             <div class="expression-title">Expressions</div>
             <div id="expression-sliders"></div>
         </div>
-    </div> <!-- Three.jsとVRM関連ライブラリをCDNから読み込み -->
+    </div>
+
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/build/three.min.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/controls/OrbitControls.js"></script>
+    <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/controls/TransformControls.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/three@0.137.0/examples/js/loaders/GLTFLoader.js"></script>
     <script nonce="{{nonce}}" src="https://unpkg.com/@pixiv/three-vrm@1.0.9/lib/three-vrm.js"></script>
 
-    <!-- メインスクリプトを外部ファイルから読み込み -->
+    <script nonce="{{nonce}}" src="{{sceneManagerJsPath}}"></script>
+    <script nonce="{{nonce}}" src="{{vrmLoaderJsPath}}"></script>
+    <script nonce="{{nonce}}" src="{{vrmUIJsPath}}"></script>
+    <script nonce="{{nonce}}" src="{{boneControllerJsPath}}"></script>
+
     <script nonce="{{nonce}}" src="{{viewerJsPath}}"></script>
 </body>
 

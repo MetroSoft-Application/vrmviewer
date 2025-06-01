@@ -91,19 +91,23 @@ export class VrmEditorProvider implements vscode.CustomReadonlyEditorProvider {
      * @returns WebViewに表示するHTML文字列
      */
     private getHtmlForWebview(webview: vscode.Webview): string {
-        // nonce値を生成してCSP（Content Security Policy）で使用
         const nonce = this.getNonce();
-        // HTMLファイルのパスを取得
         const htmlPath = vscode.Uri.file(path.join(this.context.extensionPath, 'resources', 'view', 'webview.html'));
-        // ビューワーJSファイルのパス（コンパイル後のJS）
         const viewerJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'viewer.js'));
-        // HTMLファイルを読み込み
+        const sceneManagerJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'scene-manager.js'));
+        const vrmLoaderJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'vrm-loader.js'));
+        const vrmUIJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'vrm-ui.js'));
+        const boneControllerJsPath = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'view', 'bone-controller.js'));
+
         let htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf8');
-        // プレースホルダーを置換
         htmlContent = htmlContent
             .replace(/{{nonce}}/g, nonce)
             .replace(/{{cspSource}}/g, webview.cspSource)
-            .replace(/{{viewerJsPath}}/g, viewerJsPath.toString());
+            .replace(/{{viewerJsPath}}/g, viewerJsPath.toString())
+            .replace(/{{sceneManagerJsPath}}/g, sceneManagerJsPath.toString())
+            .replace(/{{vrmLoaderJsPath}}/g, vrmLoaderJsPath.toString())
+            .replace(/{{vrmUIJsPath}}/g, vrmUIJsPath.toString())
+            .replace(/{{boneControllerJsPath}}/g, boneControllerJsPath.toString());
 
         return htmlContent;
     }
