@@ -20,6 +20,7 @@ class BoneController {
         this.modelMeshes = [];
         this.clickListenerInitialized = false;
         this.debugMode = true;
+        this.initialBoneRotations = new Map();
         this.init();
     }
 
@@ -30,6 +31,7 @@ class BoneController {
         this.initTransformControls();
         this.setupBoneSelector();
         this.setupTransformModeButtons();
+        this.setupResetButton();
 
         if (this.debugMode) {
             console.log('Bone controller initialized');
@@ -92,6 +94,81 @@ class BoneController {
 
         if (this.debugMode) {
             console.log('ボーンセレクターをセットアップしました');
+        }
+    }
+
+    /**
+     * ボーンリセットボタンのセットアップ
+     */
+    setupResetButton() {
+        const resetButton = document.getElementById('reset-bones');
+        if (!resetButton) {
+            console.error('ボーンリセットボタンが見つかりません');
+            return;
+        }
+
+        resetButton.addEventListener('click', this.resetAllBones.bind(this));
+
+        if (this.debugMode) {
+            console.log('ボーンリセットボタンをセットアップしました');
+        }
+    }
+
+    /**
+     * 初期ボーン回転値を保存
+     */
+    saveInitialBoneRotations() {
+        if (!this.currentVrm || !this.currentVrm.humanoid) {
+            return;
+        }
+
+        this.initialBoneRotations.clear();
+
+        // HTMLの選択肢からボーン名リストを取得
+        const selector = document.getElementById('boneSelector');
+        if (!selector) return;
+
+        const boneNames = Array.from(selector.options).map(option => option.value);
+
+        for (const boneName of boneNames) {
+            const bone = this.currentVrm.humanoid.getNormalizedBoneNode(boneName);
+            if (bone) {
+                this.initialBoneRotations.set(boneName, {
+                    x: bone.rotation.x,
+                    y: bone.rotation.y,
+                    z: bone.rotation.z
+                });
+            }
+        }
+
+        if (this.debugMode) {
+            console.log('初期ボーン回転値を保存しました:', this.initialBoneRotations.size, 'bones');
+        }
+    }
+
+    /**
+     * 全てのボーンを初期状態にリセット
+     */
+    resetAllBones() {
+        if (!this.currentVrm || !this.currentVrm.humanoid || this.initialBoneRotations.size === 0) {
+            console.warn('VRMモデルがロードされていないか、初期回転値が保存されていません');
+            return;
+        }
+
+        let resetCount = 0;
+
+        for (const [boneName, initialRotation] of this.initialBoneRotations) {
+            const bone = this.currentVrm.humanoid.getNormalizedBoneNode(boneName);
+            if (bone) {
+                bone.rotation.x = initialRotation.x;
+                bone.rotation.y = initialRotation.y;
+                bone.rotation.z = initialRotation.z;
+                resetCount++;
+            }
+        }
+
+        if (this.debugMode) {
+            console.log(`${resetCount}個のボーンをリセットしました`);
         }
     }
 
@@ -364,7 +441,7 @@ class BoneController {
     }
 
     /**
-     * VRMモデルを設定
+    * VRMモデルを設定
      * @param {VRM} vrm VRMモデル
      */
     setVRM(vrm) {
@@ -374,6 +451,9 @@ class BoneController {
             if (vrm.scene) {
                 this.modelMeshes = this.collectVRMMeshes(vrm.scene);
             }
+
+            // 初期回転値を保存
+            this.saveInitialBoneRotations();
 
             this.selectBone('hips');
             this.setupClickListener();
@@ -387,6 +467,7 @@ class BoneController {
             }
             this.selectedBone = null;
             this.modelMeshes = [];
+            this.initialBoneRotations.clear();
         }
     }
 

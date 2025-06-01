@@ -217,13 +217,24 @@ function resetExpressions() {
     const vrm = window.currentVrm;
     if (!vrm) return;
 
-    if (vrm.expressionManager && vrm.expressionManager.expressions) {
+    // VRM 1.0 expressionMap
+    if (vrm.expressionManager && vrm.expressionManager.expressionMap) {
+        Object.keys(vrm.expressionManager.expressionMap).forEach(expressionName => {
+            if (vrm.expressionManager.expressionMap[expressionName]) {
+                vrm.expressionManager.expressionMap[expressionName].weight = 0;
+            }
+        });
+    }
+    else if (vrm.expressionManager && vrm.expressionManager.expressions) {
+        // VRM 1.0 カスタム互換レイヤー
         Object.keys(vrm.expressionManager.expressions).forEach(expressionName => {
             if (typeof vrm.expressionManager.setValue === 'function') {
                 vrm.expressionManager.setValue(expressionName, 0);
             }
         });
-    } else if (vrm.blendShapeProxy) {
+    }
+    else if (vrm.blendShapeProxy) {
+        // VRM 0.x
         if (vrm.blendShapeProxy.blendShapeGroups) {
             vrm.blendShapeProxy.blendShapeGroups.forEach(group => {
                 if (group.name && typeof vrm.blendShapeProxy.setValue === 'function') {
@@ -244,8 +255,8 @@ function resetExpressions() {
  */
 function ensureExpressionControlsVisible() {
     if (expressionControlsElement) {
-        const container = document.getElementById('expression-sliders');
-        if (container && container.children.length > 0) {
+        // VRMモデルがロードされたら左パネルを常に表示（ボーンコントロール用）
+        if (window.currentVrm) {
             expressionControlsElement.style.display = 'block';
         } else {
             expressionControlsElement.style.display = 'none';

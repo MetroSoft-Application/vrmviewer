@@ -55,6 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('reset-camera').addEventListener('click', resetCamera);
         document.getElementById('reset-lights').addEventListener('click', resetLights);
+        document.getElementById('reset-bones').addEventListener('click', () => {
+            const boneController = getBoneController();
+            if (boneController && typeof boneController.resetAllBones === 'function') {
+                boneController.resetAllBones();
+            }
+        });
         document.getElementById('reset-expressions').addEventListener('click', resetExpressions);
         document.getElementById('ambient-light').addEventListener('input', updateAmbientLight);
         document.getElementById('directional-light').addEventListener('input', updateDirectionalLight);
