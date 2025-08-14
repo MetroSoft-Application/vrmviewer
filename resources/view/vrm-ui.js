@@ -16,7 +16,7 @@ function initVrmUIElements() {
  */
 function displayVrmMetadata(vrm, gltfData = null, fileData = null) {
     const metadataElement = document.getElementById('metadata');
-    metadataElement.innerHTML = '<div class="metadata-title">VRM Metadata</div>';
+    metadataElement.innerHTML = '';
 
     // 既存のVRMメタデータを最初に表示
     displayBasicVrmMetadata(vrm);
@@ -65,7 +65,7 @@ function displayGltfSummary(gltfData) {
         actualGltfData = gltfData.json;
     }
 
-    console.log('glTF data structure:', actualGltfData); // デバッグ用
+    console.log('glTF data structure:', actualGltfData);
 
     const summary = {
         asset: actualGltfData.asset || {},
@@ -138,11 +138,6 @@ function displayBasicVrmMetadata(vrm) {
         return;
     }
 
-    // 基本メタデータセクションの開始
-    const metadataElement = document.getElementById('metadata');
-    const basicSectionDiv = document.createElement('div');
-    basicSectionDiv.className = 'metadata-section';
-
     const meta = vrm.meta;
     let vrmVersion = "Unknown";
 
@@ -157,11 +152,10 @@ function displayBasicVrmMetadata(vrm) {
         vrmVersion = isVrm1Structure ? "1.0 (Estimated)" : "0.x (Estimated)";
     }
 
-    // VRM Version を最初に表示
-    const versionDiv = document.createElement('div');
-    versionDiv.className = 'metadata-item';
-    versionDiv.innerHTML = `<span class="metadata-title">VRM Version:</span> ${vrmVersion}`;
-    basicSectionDiv.appendChild(versionDiv);
+    // 基本メタデータを収集
+    const basicMetadata = {
+        'VRM Version': vrmVersion
+    };
 
     const metadataList = [
         { key: 'name', label: 'Model Name' },
@@ -171,7 +165,6 @@ function displayBasicVrmMetadata(vrm) {
         { key: 'contactInformation', label: 'Contact Information' },
         { key: 'references', label: 'References', isArray: true },
         { key: 'thirdPartyLicenses', label: 'Third Party Licenses' },
-        { key: 'thumbnailImage', label: 'Thumbnail', isImage: true },
         { key: 'licenseUrl', label: 'License URL' },
         { key: 'avatarPermission', label: 'Avatar Permission' },
         { key: 'allowExcessivelyViolentUsage', label: 'Violent Expression' },
@@ -196,47 +189,34 @@ function displayBasicVrmMetadata(vrm) {
         { key: 'allowedUserName', label: 'Usage Permission' }
     ];
 
-    let metadataCount = 0;
+    // 通常のメタデータ項目を追加
     metadataList.forEach(item => {
         if (meta[item.key] !== undefined && meta[item.key] !== null) {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'metadata-item';
-
-            if (item.isImage && meta[item.key]) {
-                itemDiv.innerHTML = `<span class="metadata-title">${item.label}:</span>`;
-                try {
-                    const img = document.createElement('img');
-                    img.src = meta[item.key];
-                    img.style.maxWidth = '100px';
-                    img.style.maxHeight = '100px';
-                    img.style.display = 'block';
-                    img.style.marginTop = '5px';
-                    itemDiv.appendChild(img);
-                } catch (error) {
-                    itemDiv.innerHTML += ` Image load error`;
-                }
+            if (item.key === 'thumbnailImage') {
+                // 画像は後で特別処理するのでスキップ
+                return;
             } else if (item.isArray && Array.isArray(meta[item.key])) {
-                itemDiv.innerHTML = `<span class="metadata-title">${item.label}:</span> ${meta[item.key].join(', ')}`;
+                basicMetadata[item.label] = meta[item.key].join(', ');
             } else {
-                itemDiv.innerHTML = `<span class="metadata-title">${item.label}:</span> ${meta[item.key]}`;
+                basicMetadata[item.label] = meta[item.key];
             }
-
-            basicSectionDiv.appendChild(itemDiv);
-            metadataCount++;
         }
     });
 
-    if (metadataCount === 0) {
-        const noDataDiv = document.createElement('div');
-        noDataDiv.className = 'metadata-item';
-        noDataDiv.textContent = 'No detailed metadata available';
-        basicSectionDiv.appendChild(noDataDiv);
+    // 基本メタデータセクションを表示
+    if (Object.keys(basicMetadata).length > 1) {
+        appendMetadataSection('VRM Metadata', basicMetadata);
+    } else {
+        appendMetadataSection('VRM Metadata', { 'No detailed metadata': 'available' });
     }
 
-    metadataElement.appendChild(basicSectionDiv);
-}
-
-/**
+    // 画像の特別処理
+    metadataList.forEach(item => {
+        if (item.key === 'thumbnailImage' && meta[item.key]) {
+            appendImageMetadata('Thumbnail', meta[item.key]);
+        }
+    });
+}/**
  * メタデータセクションを追加
  * @param {string} sectionTitle セクションタイトル
  * @param {Object} data データオブジェクト
@@ -299,7 +279,7 @@ function analyzeGlbFile(fileData) {
 
     // GLB マジックナンバーの確認
     const magic = view.getUint32(0, true);
-    if (magic !== 0x46546C67) { // "glTF"
+    if (magic !== 0x46546C67) {
         return { fileSize, binChunkBytes: 0 };
     }
 
@@ -314,7 +294,7 @@ function analyzeGlbFile(fileData) {
         const chunkLength = view.getUint32(offset, true);
         const chunkType = view.getUint32(offset + 4, true);
 
-        if (chunkType === 0x004E4942) { // "BIN\0"
+        if (chunkType === 0x004E4942) {
             binChunkBytes = chunkLength;
             break;
         }
