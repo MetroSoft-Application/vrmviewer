@@ -30,6 +30,9 @@ function loadVrmFromBase64Data(base64String, fileName, onSuccessCallback, onErro
             bytes[i] = binary.charCodeAt(i);
         }
 
+        // ファイルデータをグローバルに保存
+        window.currentFileData = bytes.buffer;
+
         if (window.currentVrm) {
             scene.remove(window.currentVrm.scene);
             window.currentVrm = null;
@@ -54,6 +57,9 @@ function loadVrmFromBase64Data(base64String, fileName, onSuccessCallback, onErro
  * @param {Object} gltf GLTFオブジェクト
  */
 function handleGltfLoad(gltf) {
+    // GLTFデータをグローバルに保存
+    window.currentGltfData = gltf;
+
     const vrm = gltf.userData.vrm;
 
     if (vrm) {
@@ -64,7 +70,7 @@ function handleGltfLoad(gltf) {
                 vrm.vrmVersion = "1.0";
             }
         }
-        handleVrm10Model(vrm);
+        handleVrm10Model(vrm, gltf);
     } else {
         handleVrm0xModel(gltf);
     }
@@ -73,8 +79,9 @@ function handleGltfLoad(gltf) {
 /**
  * VRM 1.0モデルの処理
  * @param {VRM} vrm VRMモデル
+ * @param {Object} gltf GLTFオブジェクト
  */
-function handleVrm10Model(vrm) {
+function handleVrm10Model(vrm, gltf) {
     window.currentVrm = vrm;
     vrm.scene.rotation.y = determineModelOrientation(vrm);
     loadingElement.style.display = 'none';
@@ -86,7 +93,7 @@ function handleVrm10Model(vrm) {
     setupVrm10ExpressionManager(vrm);
 
     if (onVrmLoadSuccessCallback) {
-        onVrmLoadSuccessCallback(vrm);
+        onVrmLoadSuccessCallback(vrm, gltf, window.currentFileData);
     }
 }
 
@@ -106,7 +113,7 @@ function handleVrm0xModel(gltf) {
             setupVrm0xExpressionManager(vrm);
 
             if (onVrmLoadSuccessCallback) {
-                onVrmLoadSuccessCallback(vrm);
+                onVrmLoadSuccessCallback(vrm, gltf, window.currentFileData);
             }
         })
         .catch((error) => {

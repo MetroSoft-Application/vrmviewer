@@ -74,11 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * VRM読み込み成功時の処理
  * @param {VRM} vrm VRMモデル
- * @param {string} fileName ファイル名
+ * @param {Object} gltfData GLTFデータ
+ * @param {ArrayBuffer} fileData ファイルデータ
  */
-function onVrmLoadSuccess(vrm, fileName) {
+function onVrmLoadSuccess(vrm, gltfData, fileData) {
     addVrmToScene(vrm);
-    displayVrmMetadata(vrm);
+    displayVrmMetadata(vrm, gltfData, fileData);
     resetCamera();
     resetExpressions();
 
