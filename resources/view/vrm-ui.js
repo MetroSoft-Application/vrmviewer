@@ -11,13 +11,140 @@ function initVrmUIElements() {
 /**
  * VRMメタデータを表示
  * @param {VRM} vrm VRMモデル
+ * @param {Object} gltfData GLTFデータ（オプション）
+ * @param {ArrayBuffer} fileData ファイルデータ（オプション）
  */
-function displayVrmMetadata(vrm) {
+function displayVrmMetadata(vrm, gltfData = null, fileData = null) {
     const metadataElement = document.getElementById('metadata');
     metadataElement.innerHTML = '<div class="metadata-title">VRM Metadata</div>';
 
+    // 既存のVRMメタデータを最初に表示
+    displayBasicVrmMetadata(vrm);
+
+    // GLBファイル情報を表示
+    if (fileData) {
+        displayGlbFileInfo(fileData);
+    }
+
+    // glTF概要情報を表示
+    if (gltfData) {
+        displayGltfSummary(gltfData);
+    }
+
+    // VRMセクション情報を表示
+    displayVrmSection(vrm, gltfData);
+}
+
+/**
+ * GLBファイル情報を表示
+ * @param {ArrayBuffer} fileData ファイルデータ
+ */
+function displayGlbFileInfo(fileData) {
+    const glbInfo = analyzeGlbFile(fileData);
+
+    appendMetadataSection('GLB', {
+        'File Size': formatBytes(glbInfo.fileSize),
+        'Binary Chunk Size': formatBytes(glbInfo.binChunkBytes)
+    });
+}
+
+/**
+ * glTF概要情報を表示
+ * @param {Object} gltfData GLTFデータ
+ */
+function displayGltfSummary(gltfData) {
+    // Three.jsのGLTFResultオブジェクトから実際のglTFデータを取得
+    let actualGltfData = gltfData;
+    
+    // GLTFResultオブジェクトの場合、parser.jsonに実際のglTFデータがある
+    if (gltfData.parser && gltfData.parser.json) {
+        actualGltfData = gltfData.parser.json;
+    }
+    // または直接jsonプロパティにある場合
+    else if (gltfData.json) {
+        actualGltfData = gltfData.json;
+    }
+
+    console.log('glTF data structure:', actualGltfData); // デバッグ用
+
+    const summary = {
+        asset: actualGltfData.asset || {},
+        counts: {
+            nodes: (actualGltfData.nodes || []).length,
+            meshes: (actualGltfData.meshes || []).length,
+            materials: (actualGltfData.materials || []).length,
+            images: (actualGltfData.images || []).length,
+            textures: (actualGltfData.textures || []).length,
+            skins: (actualGltfData.skins || []).length,
+            animations: (actualGltfData.animations || []).length,
+            buffers: (actualGltfData.buffers || []).length,
+            bufferViews: (actualGltfData.bufferViews || []).length,
+            accessors: (actualGltfData.accessors || []).length
+        }
+    };
+
+    const displayData = {};
+    if (summary.asset.generator) displayData['Generator'] = summary.asset.generator;
+    if (summary.asset.version) displayData['glTF Version'] = summary.asset.version;
+    
+    Object.entries(summary.counts).forEach(([key, value]) => {
+        displayData[key.charAt(0).toUpperCase() + key.slice(1)] = value;
+    });
+
+    appendMetadataSection('glTF Summary', displayData);
+}/**
+ * VRMセクション情報を表示
+ * @param {VRM} vrm VRMモデル
+ * @param {Object} gltfData GLTFデータ
+ */
+function displayVrmSection(vrm, gltfData) {
+    const vrmType = determineVrmType(vrm, gltfData);
+    const vrmSummary = {
+        'VRM Type': vrmType,
+        'Version Family': vrmType === 'VRM1' ? 'VRM 1.0+' : 'VRM 0.x'
+    };
+
+    if (vrm && vrm.meta) {
+        // メタ情報
+        if (vrm.meta.name) vrmSummary['Model Name'] = vrm.meta.name;
+        if (vrm.meta.version) vrmSummary['Model Version'] = vrm.meta.version;
+        if (vrm.meta.authors && Array.isArray(vrm.meta.authors)) {
+            vrmSummary['Authors'] = vrm.meta.authors.join(', ');
+        } else if (vrm.meta.author) {
+            vrmSummary['Author'] = vrm.meta.author;
+        }
+        if (vrm.meta.licenseUrl) vrmSummary['License URL'] = vrm.meta.licenseUrl;
+
+        // ヒューマノイド情報
+        const boneCount = countHumanoidBones(vrm);
+        if (boneCount > 0) vrmSummary['Humanoid Bones'] = boneCount;
+
+        // 表情情報
+        const expressionInfo = analyzeExpressions(vrm);
+        if (expressionInfo.groups.length > 0) {
+            vrmSummary['Expression Groups'] = expressionInfo.groups.join(', ');
+        }
+        if (expressionInfo.count > 0) vrmSummary['Expression Count'] = expressionInfo.count;
+
+        // 拡張機能の存在確認
+        const extensions = analyzeVrmExtensions(gltfData);
+        if (Object.keys(extensions).length > 0) {
+            Object.entries(extensions).forEach(([ext, present]) => {
+                vrmSummary[`Extension: ${ext}`] = present ? 'Present' : 'Not Present';
+            });
+        }
+    }
+
+    appendMetadataSection('VRM Section', vrmSummary);
+}
+
+/**
+ * 基本的なVRMメタデータを表示
+ * @param {VRM} vrm VRMモデル
+ */
+function displayBasicVrmMetadata(vrm) {
     if (!vrm.meta) {
-        appendMetadataItem('No metadata available');
+        appendMetadataItem('No detailed metadata available');
         return;
     }
 
@@ -35,6 +162,7 @@ function displayVrmMetadata(vrm) {
         vrmVersion = isVrm1Structure ? "1.0 (Estimated)" : "0.x (Estimated)";
     }
 
+    // VRM Version を最初に表示
     appendMetadataItem({ label: 'VRM Version', key: '_version' }, { _version: vrmVersion });
 
     const metadataList = [
@@ -81,6 +209,237 @@ function displayVrmMetadata(vrm) {
     if (metadataCount === 0) {
         appendMetadataItem('No detailed metadata available');
     }
+}
+
+/**
+ * メタデータセクションを追加
+ * @param {string} sectionTitle セクションタイトル
+ * @param {Object} data データオブジェクト
+ */
+function appendMetadataSection(sectionTitle, data) {
+    const metadataElement = document.getElementById('metadata');
+
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'metadata-section';
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'metadata-section-title';
+    titleDiv.textContent = `== ${sectionTitle} ==`;
+    sectionDiv.appendChild(titleDiv);
+
+    Object.entries(data).forEach(([key, value]) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'metadata-item';
+        itemDiv.innerHTML = `<span class="metadata-label">${key}:</span> <span class="metadata-value">${value}</span>`;
+        sectionDiv.appendChild(itemDiv);
+    });
+
+    metadataElement.appendChild(sectionDiv);
+}
+
+/**
+ * 画像メタデータを追加
+ * @param {string} label ラベル
+ * @param {string} imageSrc 画像ソース
+ */
+function appendImageMetadata(label, imageSrc) {
+    const metadataElement = document.getElementById('metadata');
+    const div = document.createElement('div');
+    div.className = 'metadata-item';
+    div.innerHTML = `<span class="metadata-label">${label}:</span>`;
+
+    try {
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.style.maxWidth = '100px';
+        img.style.maxHeight = '100px';
+        img.style.display = 'block';
+        img.style.marginTop = '5px';
+        div.appendChild(img);
+    } catch (error) {
+        div.innerHTML += ` <span class="metadata-value">Image load error</span>`;
+    }
+
+    metadataElement.appendChild(div);
+}
+
+/**
+ * GLBファイルを解析
+ * @param {ArrayBuffer} fileData ファイルデータ
+ * @returns {Object} GLBファイル情報
+ */
+function analyzeGlbFile(fileData) {
+    const view = new DataView(fileData);
+    const fileSize = fileData.byteLength;
+
+    // GLB マジックナンバーの確認
+    const magic = view.getUint32(0, true);
+    if (magic !== 0x46546C67) { // "glTF"
+        return { fileSize, binChunkBytes: 0 };
+    }
+
+    // バイナリチャンクサイズの計算
+    const version = view.getUint32(4, true);
+    const length = view.getUint32(8, true);
+
+    let binChunkBytes = 0;
+    let offset = 12;
+
+    while (offset < length) {
+        const chunkLength = view.getUint32(offset, true);
+        const chunkType = view.getUint32(offset + 4, true);
+
+        if (chunkType === 0x004E4942) { // "BIN\0"
+            binChunkBytes = chunkLength;
+            break;
+        }
+
+        offset += 8 + chunkLength;
+    }
+
+    return { fileSize, binChunkBytes };
+}
+
+/**
+ * VRMタイプを決定
+ * @param {VRM} vrm VRMモデル
+ * @param {Object} gltfData GLTFデータ
+ * @returns {string} VRMタイプ
+ */
+function determineVrmType(vrm, gltfData) {
+    // Three.jsのGLTFResultオブジェクトから実際のglTFデータを取得
+    let actualGltfData = gltfData;
+    
+    if (gltfData && gltfData.parser && gltfData.parser.json) {
+        actualGltfData = gltfData.parser.json;
+    } else if (gltfData && gltfData.json) {
+        actualGltfData = gltfData.json;
+    }
+
+    if (actualGltfData && actualGltfData.extensions) {
+        if (actualGltfData.extensions.VRMC_vrm) return 'VRM1';
+        if (actualGltfData.extensions.VRM) return 'VRM0';
+    }
+
+    if (vrm && vrm.vrmVersion) {
+        return vrm.vrmVersion.startsWith('1') ? 'VRM1' : 'VRM0';
+    }
+
+    return 'Unknown';
+}
+
+/**
+ * ヒューマノイドボーン数をカウント
+ * @param {VRM} vrm VRMモデル
+ * @returns {number} ボーン数
+ */
+function countHumanoidBones(vrm) {
+    if (!vrm) return 0;
+
+    if (vrm.humanoid && vrm.humanoid.humanBones) {
+        return Object.keys(vrm.humanoid.humanBones).length;
+    }
+
+    if (vrm.humanoid && vrm.humanoid.getBoneNode) {
+        // VRM 0.x の場合の推定
+        const commonBones = [
+            'hips', 'spine', 'chest', 'neck', 'head',
+            'leftShoulder', 'leftUpperArm', 'leftLowerArm', 'leftHand',
+            'rightShoulder', 'rightUpperArm', 'rightLowerArm', 'rightHand',
+            'leftUpperLeg', 'leftLowerLeg', 'leftFoot',
+            'rightUpperLeg', 'rightLowerLeg', 'rightFoot'
+        ];
+
+        return commonBones.filter(bone => {
+            try {
+                return vrm.humanoid.getBoneNode(bone) !== null;
+            } catch {
+                return false;
+            }
+        }).length;
+    }
+
+    return 0;
+}
+
+/**
+ * 表情情報を解析
+ * @param {VRM} vrm VRMモデル
+ * @returns {Object} 表情情報
+ */
+function analyzeExpressions(vrm) {
+    const result = { groups: [], count: 0 };
+
+    if (!vrm) return result;
+
+    // VRM 1.0の場合
+    if (vrm.expressionManager && vrm.expressionManager.expressionMap) {
+        const expressions = Object.keys(vrm.expressionManager.expressionMap);
+        result.count = expressions.length;
+
+        const presetExpressions = ['happy', 'angry', 'sad', 'relaxed', 'surprised', 'aa', 'ih', 'ou', 'ee', 'oh', 'blink', 'blinkLeft', 'blinkRight', 'lookUp', 'lookDown', 'lookLeft', 'lookRight'];
+        const hasPreset = expressions.some(expr => presetExpressions.includes(expr));
+
+        if (hasPreset) result.groups.push('preset');
+        if (expressions.some(expr => !presetExpressions.includes(expr))) {
+            result.groups.push('custom');
+        }
+    }
+    // VRM 0.x の場合
+    else if (vrm.blendShapeProxy && vrm.blendShapeProxy.blendShapeGroups) {
+        result.count = vrm.blendShapeProxy.blendShapeGroups.length;
+        result.groups.push('blendShape');
+    }
+
+    return result;
+}
+
+/**
+ * VRM拡張機能を解析
+ * @param {Object} gltfData GLTFデータ
+ * @returns {Object} 拡張機能の存在情報
+ */
+function analyzeVrmExtensions(gltfData) {
+    const extensions = {};
+
+    // Three.jsのGLTFResultオブジェクトから実際のglTFデータを取得
+    let actualGltfData = gltfData;
+    
+    if (gltfData && gltfData.parser && gltfData.parser.json) {
+        actualGltfData = gltfData.parser.json;
+    } else if (gltfData && gltfData.json) {
+        actualGltfData = gltfData.json;
+    }
+
+    if (!actualGltfData || !actualGltfData.extensions) return extensions;
+
+    const vrmExtensions = [
+        'VRMC_springBone',
+        'VRMC_node_collider',
+        'VRMC_materials_mtoon',
+        'VRMC_materials_hdr_emissiveMultiplier'
+    ];
+
+    vrmExtensions.forEach(ext => {
+        extensions[ext] = actualGltfData.extensions.hasOwnProperty(ext);
+    });
+
+    return extensions;
+}
+
+/**
+ * バイト数をフォーマット
+ * @param {number} bytes バイト数
+ * @returns {string} フォーマットされた文字列
+ */
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 /**
